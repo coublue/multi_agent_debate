@@ -25,9 +25,10 @@ class ConAgent(BaseAgent):
     role = "con"
 
     async def opening(self, article: dict[str, Any] | str, moderator_opening: Any) -> Any:
+        prompt_file = "topic_con_opening.txt" if _is_topic_debate(article) else "con_opening.txt"
         return await self._run_stage(
             "con_opening",
-            "con_opening.txt",
+            prompt_file,
             {"article": article, "moderator_opening": moderator_opening},
         )
 
@@ -77,3 +78,7 @@ class ConAgent(BaseAgent):
         if inspect.isawaitable(result):
             return await result
         return result
+
+
+def _is_topic_debate(article: dict[str, Any] | str) -> bool:
+    return isinstance(article, dict) and article.get("debate_mode") == "topic"

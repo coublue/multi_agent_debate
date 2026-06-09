@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.debate import DebateStage, DebateStatus
 from app.schemas.agent_outputs import JudgeReport
@@ -10,6 +10,28 @@ from app.schemas.article import ArticleRead
 
 class DebateCreate(BaseModel):
     article_id: int
+
+
+class TopicDebateCreate(BaseModel):
+    topic: str = Field(min_length=1)
+    background: Optional[str] = None
+    user_question: Optional[str] = None
+
+    @field_validator("topic")
+    @classmethod
+    def topic_must_not_be_blank(cls, value: str) -> str:
+        topic = value.strip()
+        if not topic:
+            raise ValueError("Topic must not be blank")
+        return topic
+
+    @field_validator("background", "user_question")
+    @classmethod
+    def blank_optional_fields_become_none(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
 
 
 class AgentMessageRead(BaseModel):

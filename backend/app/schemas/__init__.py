@@ -11,6 +11,7 @@ from app.schemas.debate import (
     DebateDetailRead,
     DebateListItem,
     DebateRead,
+    TopicDebateCreate,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "JudgeReport",
     "ModeratorMidpoint",
     "ModeratorOpening",
+    "TopicDebateCreate",
 ]

@@ -104,6 +104,15 @@ class FakeConAgent:
         return {"summary": "Credibility should be treated as mixed.", "key_points": ["caution"]}
 
 
+class FailingConAgent(FakeConAgent):
+    async def opening(
+        self,
+        article: dict[str, Any],
+        moderator_opening: dict[str, Any],
+    ) -> dict[str, Any]:
+        raise RuntimeError("con opening failed")
+
+
 class FakeJudgeAgent:
     name = "fake_judge"
     role = "judge"
@@ -139,6 +148,15 @@ def _orchestrator() -> DebateOrchestrator:
         moderator=FakeModeratorAgent(),
         pro=FakeProAgent(),
         con=FakeConAgent(),
+        judge=FakeJudgeAgent(),
+    )
+
+
+def _failing_orchestrator() -> DebateOrchestrator:
+    return DebateOrchestrator(
+        moderator=FakeModeratorAgent(),
+        pro=FakeProAgent(),
+        con=FailingConAgent(),
         judge=FakeJudgeAgent(),
     )
 
@@ -210,3 +228,45 @@ def test_debate_service_persists_messages_and_updates_final_fields() -> None:
     assert debate.final_report["final_summary"] == "The article is plausible but not definitive."
     assert len(messages) == 9
     assert messages[-1].stage == DebateStage.JUDGE_REPORT
+
+
+def test_debate_service_failure_preserves_completed_stage_messages() -> None:
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        article = create_article(
+            session,
+            ArticleCreate(
+                title="Local Article",
+                content="Evidence-rich article content",
+                user_question="Is it credible?",
+            ),
+        )
+
+        debate = asyncio.run(
+            create_and_run_debate(session, article.id, orchestrator=_failing_orchestrator())
+        )
+
+        messages = list(
+            session.exec(
+                select(AgentMessage)
+                .where(AgentMessage.debate_id == debate.id)
+                .order_by(AgentMessage.round_index)
+            ).all()
+        )
+
+    assert debate.status == DebateStatus.FAILED
+    assert "con_opening failed" in debate.error_message
+    assert debate.main_claim == "Local debates can evaluate article credibility."
+    assert debate.debate_topic == "Whether the article's claim is well supported"
+    assert debate.final_report is None
+    assert len(messages) == 2
+    assert [message.stage for message in messages] == [
+        DebateStage.MODERATOR_OPENING,
+        DebateStage.PRO_OPENING,
+    ]

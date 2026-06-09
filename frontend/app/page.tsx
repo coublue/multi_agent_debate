@@ -69,19 +69,32 @@ export default function HomePage() {
             Multi Agent Debate
           </p>
           <h1 className="text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">
-            文章辩论工作台
+            文章与话题辩论工作台
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-            粘贴一篇文章，系统会组织主持人、正方、反方和裁判完成 9
-            阶段审议，帮助你判断观点是否可靠。
+            粘贴文章进行 9 阶段严肃分析，或输入一个话题快速启动 5 阶段辩论，查看主持人、正方、反方和裁判的推演过程。
           </p>
         </div>
-        <Link
-          className="inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800"
-          href="/debates/new"
-        >
-          新建辩论
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            href="/articles"
+          >
+            文章库
+          </Link>
+          <Link
+            className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            href="/debates/topic/new"
+          >
+            快速话题辩论
+          </Link>
+          <Link
+            className="inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800"
+            href="/debates/new"
+          >
+            新建文章辩论
+          </Link>
+        </div>
       </section>
 
       <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -96,7 +109,7 @@ export default function HomePage() {
           <DebateList
             deletingDebateId={deletingDebateId}
             debates={debates}
-            emptyMessage="还没有辩论。先创建一场新的文章辩论。"
+            emptyMessage="还没有辩论。先创建一场文章辩论，或者快速创建一个话题辩论。"
             onDeleteDebate={handleDeleteDebate}
             onSelectDebate={(debate) => router.push(`/debates/${debate.id}`)}
           />

@@ -36,9 +36,10 @@ class JudgeAgent(BaseAgent):
         pro_closing: Any,
         con_closing: Any,
     ) -> Any:
+        prompt_file = "topic_judge.txt" if _is_topic_debate(article) else "judge.txt"
         return await self._run_stage(
             "judge_report",
-            "judge.txt",
+            prompt_file,
             {
                 "article": article,
                 "moderator_opening": moderator_opening,
@@ -62,3 +63,7 @@ class JudgeAgent(BaseAgent):
         if inspect.isawaitable(result):
             return await result
         return result
+
+
+def _is_topic_debate(article: dict[str, Any] | str) -> bool:
+    return isinstance(article, dict) and article.get("debate_mode") == "topic"

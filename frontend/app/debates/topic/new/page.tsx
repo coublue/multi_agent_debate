@@ -4,24 +4,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { ArticleForm } from "@/components/article-form";
-import { createArticle, createDebate } from "@/lib/api";
-import type { ArticleCreate } from "@/lib/types";
+import { TopicDebateForm } from "@/components/topic-debate-form";
+import { createTopicDebate } from "@/lib/api";
+import type { TopicDebateCreate } from "@/lib/types";
 
-export default function NewDebatePage() {
+export default function NewTopicDebatePage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(values: ArticleCreate) {
+  async function handleSubmit(values: TopicDebateCreate) {
     try {
       setSubmitting(true);
       setError(null);
-      const article = await createArticle(values);
-      const debate = await createDebate({ article_id: article.id });
+      const debate = await createTopicDebate(values);
       router.push(`/debates/${debate.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "创建辩论失败。");
+      setError(err instanceof Error ? err.message : "创建快速话题辩论失败。");
     } finally {
       setSubmitting(false);
     }
@@ -35,24 +34,24 @@ export default function NewDebatePage() {
         </Link>
         <Link
           className="text-sm font-medium text-slate-600 hover:text-slate-950"
-          href="/debates/topic/new"
+          href="/debates/new"
         >
-          改用快速话题辩论
+          新建文章辩论
         </Link>
       </nav>
 
       <section className="mb-6">
-        <p className="mb-2 text-sm font-medium text-slate-500">新建文章辩论</p>
+        <p className="mb-2 text-sm font-medium text-slate-500">快速话题辩论</p>
         <h1 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
-          提交待分析文章
+          输入一个话题，快速开始辩论
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-          填写标题、正文和关注问题后，系统会创建文章并立即启动 9 阶段多 Agent 辩论。
+          适合临时观点讨论和轻量推演。系统会创建 5 阶段快速辩论，并跳转到辩论详情页查看过程。
         </p>
       </section>
 
       <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <ArticleForm onSubmit={handleSubmit} loading={submitting} error={error} />
+        <TopicDebateForm onSubmit={handleSubmit} loading={submitting} error={error} />
       </section>
     </main>
   );

@@ -5,6 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { DebateStage } from "@/components/debate-stage";
+import {
+  DebateStageProgress,
+  type DebateStageMode,
+  getStageOrder,
+} from "@/components/debate-stage-progress";
 import { DebateStatus } from "@/components/debate-status";
 import { JudgeReport } from "@/components/judge-report";
 import { deleteDebate, getDebate } from "@/lib/api";
@@ -73,7 +78,9 @@ export default function DebateDetailPage() {
       return;
     }
 
-    const confirmed = window.confirm(`确定删除这场辩论吗？\n\n${debate.article.title}`);
+    const confirmed = window.confirm(
+      `确定删除这场辩论吗？\n\n${debate.article.title}`,
+    );
     if (!confirmed) {
       return;
     }
@@ -88,6 +95,14 @@ export default function DebateDetailPage() {
       setDeleting(false);
     }
   }
+
+  const isTopicDebate = debate?.article.source === "topic";
+  const debateMode: DebateStageMode = isTopicDebate ? "topic" : "article";
+  const stageOrder = getStageOrder(debateMode);
+  const visibleStageSet = new Set(stageOrder);
+  const visibleMessageCount =
+    debate?.messages.filter((message) => visibleStageSet.has(message.stage)).length ??
+    0;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 text-slate-900 sm:px-6 lg:py-9">
@@ -124,9 +139,16 @@ export default function DebateDetailPage() {
             <p className="mb-2 text-sm font-medium text-slate-500">
               辩论 #{debate.id}
             </p>
-            <h1 className="max-w-4xl break-words text-2xl font-semibold text-slate-950 sm:text-3xl">
-              {debate.article.title}
-            </h1>
+            <div className="flex flex-wrap items-start gap-3">
+              <h1 className="max-w-4xl break-words text-2xl font-semibold text-slate-950 sm:text-3xl">
+                {debate.article.title}
+              </h1>
+              {isTopicDebate ? (
+                <span className="mt-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
+                  话题辩论
+                </span>
+              ) : null}
+            </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <DebateStatus status={debate.status} />
               {typeof debate.credibility_score === "number" ? (
@@ -146,10 +168,18 @@ export default function DebateDetailPage() {
             <StateMessage tone="error" text={debate.error_message} />
           ) : null}
 
+          <DebateStageProgress
+            messages={debate.messages}
+            mode={debateMode}
+            status={debate.status}
+          />
+
           <section className="mb-5 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
             <article className="min-w-0 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="mb-4 text-lg font-semibold text-slate-950">文章</h2>
-              {debate.article.source ? (
+              <h2 className="mb-4 text-lg font-semibold text-slate-950">
+                {isTopicDebate ? "话题背景" : "文章"}
+              </h2>
+              {!isTopicDebate && debate.article.source ? (
                 <p className="mb-2 break-words text-sm text-slate-600">
                   来源：{debate.article.source}
                 </p>
@@ -168,6 +198,7 @@ export default function DebateDetailPage() {
               <h2 className="mb-4 text-lg font-semibold text-slate-950">
                 辩论概要
               </h2>
+              <KeyValue label="辩论类型" value={isTopicDebate ? "话题辩论" : "文章辩论"} />
               <KeyValue label="核心主张" value={debate.main_claim} />
               <KeyValue label="辩题" value={debate.debate_topic} />
               <KeyValue label="创建时间" value={formatDate(debate.created_at)} />
@@ -177,12 +208,14 @@ export default function DebateDetailPage() {
 
           <section className="mb-5 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-slate-950">9 阶段消息</h2>
+              <h2 className="text-lg font-semibold text-slate-950">
+                {stageOrder.length} 阶段消息
+              </h2>
               <span className="text-sm text-slate-500">
-                {debate.messages.length} 条输出
+                {visibleMessageCount} 条输出
               </span>
             </div>
-            <DebateStage messages={debate.messages} />
+            <DebateStage messages={debate.messages} mode={debateMode} />
           </section>
 
           <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">

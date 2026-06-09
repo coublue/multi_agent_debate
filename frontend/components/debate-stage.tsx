@@ -1,48 +1,79 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
 import type { AgentMessageRead } from "@/lib/types";
+import { AgentFilter, type AgentRoleFilter } from "./agent-filter";
 import { AgentMessageCard } from "./agent-message-card";
+import {
+  type DebateStageMode,
+  getStageOrder,
+  STAGE_LABELS,
+} from "./debate-stage-progress";
 
 type DebateStageProps = {
   messages: AgentMessageRead[];
+  mode?: DebateStageMode;
 };
 
-const STAGE_ORDER = [
-  "moderator_opening",
-  "pro_opening",
-  "con_opening",
-  "pro_rebuttal",
-  "con_rebuttal",
-  "moderator_midpoint",
-  "pro_closing",
-  "con_closing",
-  "judge_report",
-] as const;
+function matchesFilter(message: AgentMessageRead, filter: AgentRoleFilter) {
+  return filter === "all" || String(message.agent_role) === filter;
+}
 
-const STAGE_LABELS: Record<string, string> = {
-  moderator_opening: "主持人开场",
-  pro_opening: "正方开篇",
-  con_opening: "反方开篇",
-  pro_rebuttal: "正方反驳",
-  con_rebuttal: "反方反驳",
-  moderator_midpoint: "主持人中场梳理",
-  pro_closing: "正方总结",
-  con_closing: "反方总结",
-  judge_report: "裁判报告",
-};
-
-export function DebateStage({ messages }: DebateStageProps) {
-  const messagesByStage = new Map<string, AgentMessageRead[]>();
+function getAgentCounts(messages: AgentMessageRead[]) {
+  const counts: Partial<Record<AgentRoleFilter, number>> = {
+    all: messages.length,
+    moderator: 0,
+    pro: 0,
+    con: 0,
+    judge: 0,
+  };
 
   for (const message of messages) {
-    const stageMessages = messagesByStage.get(String(message.stage)) ?? [];
-    stageMessages.push(message);
-    messagesByStage.set(String(message.stage), stageMessages);
+    const role = String(message.agent_role) as AgentRoleFilter;
+    if (role in counts) {
+      counts[role] = (counts[role] ?? 0) + 1;
+    }
   }
+
+  return counts;
+}
+
+export function DebateStage({ messages, mode = "article" }: DebateStageProps) {
+  const [roleFilter, setRoleFilter] = useState<AgentRoleFilter>("all");
+  const stageOrder = useMemo(() => getStageOrder(mode), [mode]);
+  const visibleStages = useMemo(() => new Set(stageOrder), [stageOrder]);
+  const visibleMessages = useMemo(
+    () => messages.filter((message) => visibleStages.has(message.stage)),
+    [messages, visibleStages],
+  );
+  const counts = useMemo(() => getAgentCounts(visibleMessages), [visibleMessages]);
+
+  const messagesByStage = useMemo(() => {
+    const grouped = new Map<string, AgentMessageRead[]>();
+
+    for (const message of visibleMessages) {
+      const stageMessages = grouped.get(String(message.stage)) ?? [];
+      stageMessages.push(message);
+      grouped.set(String(message.stage), stageMessages);
+    }
+
+    return grouped;
+  }, [visibleMessages]);
 
   return (
     <div className="space-y-4">
-      {STAGE_ORDER.map((stage, index) => {
+      <AgentFilter counts={counts} onChange={setRoleFilter} value={roleFilter} />
+
+      {stageOrder.map((stage, index) => {
         const stageMessages = messagesByStage.get(String(stage)) ?? [];
+        const filteredMessages = stageMessages.filter((message) =>
+          matchesFilter(message, roleFilter),
+        );
         const isComplete = stageMessages.length > 0;
+        if (roleFilter !== "all" && filteredMessages.length === 0) {
+          return null;
+        }
 
         return (
           <section
@@ -53,7 +84,7 @@ export function DebateStage({ messages }: DebateStageProps) {
               <div className="flex items-center gap-2">
                 <span
                   className={[
-                    "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold",
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
                     isComplete
                       ? "border-slate-900 bg-slate-900 text-white"
                       : "border-slate-300 bg-slate-50 text-slate-500",
@@ -62,25 +93,35 @@ export function DebateStage({ messages }: DebateStageProps) {
                   {index + 1}
                 </span>
                 <h3 className="text-sm font-semibold text-slate-900">
-                  {STAGE_LABELS[String(stage)]}
+                  {STAGE_LABELS[stage]}
                 </h3>
               </div>
             </div>
 
             <div className="min-w-0 space-y-3">
-              {stageMessages.length > 0 ? (
-                stageMessages.map((message) => (
+              {filteredMessages.length > 0 ? (
+                filteredMessages.map((message) => (
                   <AgentMessageCard key={message.id} message={message} />
                 ))
               ) : (
                 <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-sm leading-6 text-slate-500">
-                  等待该阶段输出。
+                  {isComplete
+                    ? "当前筛选下没有该阶段发言。"
+                    : "等待该阶段输出。"}
                 </div>
               )}
             </div>
           </section>
         );
       })}
+
+      {roleFilter !== "all" &&
+      visibleMessages.length > 0 &&
+      !visibleMessages.some((message) => matchesFilter(message, roleFilter)) ? (
+        <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm leading-6 text-slate-500">
+          当前筛选下没有发言。
+        </div>
+      ) : null}
     </div>
   );
 }

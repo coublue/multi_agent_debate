@@ -110,3 +110,36 @@ def test_run_prompt_returns_structured_parse_error() -> None:
     assert result.error is not None
     assert result.error["code"] == "json_not_found"
     assert "output_preview" in result.error["details"]
+
+
+def test_run_prompt_repairs_invalid_json_once() -> None:
+    class RepairingMockClient:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        async def chat(self, messages, *, model=None, temperature=None):  # type: ignore[no-untyped-def]
+            self.calls.append(
+                {
+                    "messages": list(messages),
+                    "model": model,
+                    "temperature": temperature,
+                }
+            )
+            if len(self.calls) == 1:
+                return '{"argument": "ok",}'
+            return '{"argument": "ok"}'
+
+    mock = RepairingMockClient()
+    agent = BaseAgent(llm_client=mock)
+
+    result = asyncio.run(
+        agent.run_prompt(
+            prompt="Return JSON for {{ topic }}",
+            context={"topic": "logic"},
+        )
+    )
+
+    assert result.ok is True
+    assert result.data == {"argument": "ok"}
+    assert len(mock.calls) == 2
+    assert "修复为一个合法 JSON" in mock.calls[1]["messages"][0]["content"]

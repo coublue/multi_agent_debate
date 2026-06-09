@@ -121,7 +121,12 @@ class BaseAgent:
             )
             rendered_prompt = self._append_context_block(rendered_prompt, variables)
             raw_output = await self.call_llm(rendered_prompt)
-            data = self.parse_json(raw_output)
+            try:
+                data = self.parse_json(raw_output)
+            except AgentOutputParseError as parse_error:
+                repaired_output = await self.repair_json_output(raw_output, parse_error)
+                data = self.parse_json(repaired_output)
+                raw_output = repaired_output
             return AgentRunResult(
                 ok=True,
                 data=data,
@@ -165,6 +170,20 @@ class BaseAgent:
             model=self.model,
             temperature=self.temperature,
         )
+
+    async def repair_json_output(
+        self,
+        raw_output: str,
+        parse_error: AgentOutputParseError,
+    ) -> str:
+        repair_prompt = (
+            "你刚才的输出不是合法 JSON。请只把下面内容修复为一个合法 JSON 对象或数组，"
+            "不要添加解释、Markdown 代码块或额外文本。必须保留原有语义和字段。\n\n"
+            f"解析错误：{parse_error}\n\n"
+            "原始输出：\n"
+            f"{raw_output}"
+        )
+        return await self.call_llm(repair_prompt)
 
     @staticmethod
     def _append_context_block(prompt: str, variables: Mapping[str, Any]) -> str:

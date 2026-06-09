@@ -33,47 +33,23 @@ def make_test_client() -> Generator[TestClient, None, None]:
 
 
 class FakeDebateService:
+    background_runs: list[int] = []
+
     def create_debate(self, session: Session, article_id: int) -> Debate:
         now = datetime.now(UTC)
-        final_report = {
-            "main_claim": "The article makes a testable claim.",
-            "pro_strongest_points": ["The claim has internal consistency."],
-            "con_strongest_points": ["The evidence is incomplete."],
-            "key_disagreements": ["Evidence quality"],
-            "winner": "mixed",
-            "credibility_score": 62,
-            "credible_parts": ["The basic timeline is plausible."],
-            "questionable_parts": ["The causal leap needs support."],
-            "follow_up_questions": ["What source verifies the claim?"],
-            "final_summary": "The article is partially credible.",
-        }
         debate = Debate(
             article_id=article_id,
-            status=DebateStatus.COMPLETED,
-            main_claim=final_report["main_claim"],
-            debate_topic="Credibility of the article",
-            final_report=final_report,
-            winner=final_report["winner"],
-            credibility_score=final_report["credibility_score"],
+            status=DebateStatus.PENDING,
             created_at=now,
             updated_at=now,
         )
         session.add(debate)
         session.commit()
         session.refresh(debate)
-
-        message = AgentMessage(
-            debate_id=debate.id,
-            agent_name="moderator",
-            agent_role="moderator",
-            round_index=0,
-            stage=DebateStage.MODERATOR_OPENING,
-            message_type="structured",
-            content={"summary": "Opening frame"},
-        )
-        session.add(message)
-        session.commit()
         return debate
+
+    async def run_debate_background(self, debate_id: int) -> None:
+        self.background_runs.append(debate_id)
 
     def delete_debate(self, session: Session, debate_id: int) -> bool:
         debate = session.get(Debate, debate_id)
@@ -92,7 +68,9 @@ class FakeDebateService:
 
 def test_create_list_and_get_debate_with_fake_service() -> None:
     with make_test_client() as client:
-        app.dependency_overrides[get_debate_service] = lambda: FakeDebateService()
+        fake_service = FakeDebateService()
+        fake_service.background_runs = []
+        app.dependency_overrides[get_debate_service] = lambda: fake_service
         article_response = client.post(
             "/api/articles",
             json={
@@ -109,10 +87,11 @@ def test_create_list_and_get_debate_with_fake_service() -> None:
         assert create_response.status_code == 201
         created = create_response.json()
         assert created["article_id"] == article_id
-        assert created["status"] == "completed"
-        assert created["winner"] == "mixed"
-        assert created["credibility_score"] == 62
-        assert created["final_report"]["final_summary"] == "The article is partially credible."
+        assert created["status"] == "pending"
+        assert created["winner"] is None
+        assert created["credibility_score"] is None
+        assert created["final_report"] is None
+        assert fake_service.background_runs == [created["id"]]
 
         list_response = client.get("/api/debates")
         assert list_response.status_code == 200
@@ -121,9 +100,9 @@ def test_create_list_and_get_debate_with_fake_service() -> None:
                 "id": created["id"],
                 "article_id": article_id,
                 "title": "Debate me",
-                "status": "completed",
-                "winner": "mixed",
-                "credibility_score": 62,
+                "status": "pending",
+                "winner": None,
+                "credibility_score": None,
                 "created_at": created["created_at"],
             }
         ]
@@ -132,8 +111,7 @@ def test_create_list_and_get_debate_with_fake_service() -> None:
         assert detail_response.status_code == 200
         detail = detail_response.json()
         assert detail["article"]["title"] == "Debate me"
-        assert detail["messages"][0]["agent_name"] == "moderator"
-        assert detail["messages"][0]["stage"] == "moderator_opening"
+        assert detail["messages"] == []
 
         delete_response = client.delete(f"/api/debates/{created['id']}")
         assert delete_response.status_code == 204

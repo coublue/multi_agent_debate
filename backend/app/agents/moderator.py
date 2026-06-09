@@ -29,9 +29,14 @@ class ModeratorAgent(BaseAgent):
         article: dict[str, Any] | str,
         user_question: str | None = None,
     ) -> Any:
+        prompt_file = (
+            "topic_moderator_opening.txt"
+            if _is_topic_debate(article)
+            else "moderator_opening.txt"
+        )
         return await self._run_stage(
             "moderator_opening",
-            "moderator_opening.txt",
+            prompt_file,
             {"article": article, "user_question": user_question},
         )
 
@@ -44,9 +49,14 @@ class ModeratorAgent(BaseAgent):
         pro_rebuttal: Any,
         con_rebuttal: Any,
     ) -> Any:
+        prompt_file = (
+            "topic_moderator_midpoint.txt"
+            if _is_topic_debate(article)
+            else "moderator_midpoint.txt"
+        )
         return await self._run_stage(
             "moderator_midpoint",
-            "moderator_midpoint.txt",
+            prompt_file,
             {
                 "article": article,
                 "moderator_opening": moderator_opening,
@@ -67,3 +77,7 @@ class ModeratorAgent(BaseAgent):
         if inspect.isawaitable(result):
             return await result
         return result
+
+
+def _is_topic_debate(article: dict[str, Any] | str) -> bool:
+    return isinstance(article, dict) and article.get("debate_mode") == "topic"

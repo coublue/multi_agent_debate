@@ -25,9 +25,10 @@ class ProAgent(BaseAgent):
     role = "pro"
 
     async def opening(self, article: dict[str, Any] | str, moderator_opening: Any) -> Any:
+        prompt_file = "topic_pro_opening.txt" if _is_topic_debate(article) else "pro_opening.txt"
         return await self._run_stage(
             "pro_opening",
-            "pro_opening.txt",
+            prompt_file,
             {"article": article, "moderator_opening": moderator_opening},
         )
 
@@ -75,3 +76,7 @@ class ProAgent(BaseAgent):
         if inspect.isawaitable(result):
             return await result
         return result
+
+
+def _is_topic_debate(article: dict[str, Any] | str) -> bool:
+    return isinstance(article, dict) and article.get("debate_mode") == "topic"

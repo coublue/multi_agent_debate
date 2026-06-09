@@ -66,6 +66,12 @@ def test_article_create_get_list_and_health_router() -> None:
                 "title": "Local debate article",
                 "source": "unit-test",
                 "created_at": created["created_at"],
+                "debate_count": 0,
+                "latest_debate_id": None,
+                "latest_debate_status": None,
+                "latest_debate_winner": None,
+                "latest_debate_credibility_score": None,
+                "latest_debate_created_at": None,
             }
         ]
 

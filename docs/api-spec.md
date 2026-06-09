@@ -68,7 +68,13 @@
     "id": 1,
     "title": "文章标题",
     "source": "https://example.com/source",
-    "created_at": "2026-06-07T10:00:00"
+    "created_at": "2026-06-07T10:00:00",
+    "debate_count": 2,
+    "latest_debate_id": 3,
+    "latest_debate_status": "completed",
+    "latest_debate_winner": "mixed",
+    "latest_debate_credibility_score": 72,
+    "latest_debate_created_at": "2026-06-07T11:00:00"
   }
 ]
 ```
@@ -78,6 +84,42 @@
 读取单篇文章详情。
 
 响应字段同 `ArticleRead`：`id`、`title`、`source`、`content`、`user_question`、`created_at`、`updated_at`。
+
+### GET `/api/articles/{article_id}/debates`
+
+读取某篇文章关联的辩论列表。
+
+响应字段同 `DebateListItem`：
+
+```json
+[
+  {
+    "id": 1,
+    "article_id": 1,
+    "title": "文章标题",
+    "status": "completed",
+    "winner": "mixed",
+    "credibility_score": 72,
+    "created_at": "2026-06-07T10:00:00"
+  }
+]
+```
+
+### DELETE `/api/articles/{article_id}`
+
+删除文章。
+
+删除文章会同时删除该文章下的所有辩论记录和对应 `agent_messages`。
+
+成功响应：`204 No Content`。
+
+如果文章不存在，返回：
+
+```json
+{
+  "detail": "Article not found"
+}
+```
 
 ## Debates
 
@@ -110,6 +152,37 @@
   "updated_at": "2026-06-07T10:00:00"
 }
 ```
+
+V2 起，该接口只创建辩论并立即返回，不等待 9 阶段全部完成。后端会在后台继续执行辩论流程，前端可轮询 `GET /api/debates/{debate_id}` 获取逐步增加的 `messages`。
+
+### POST `/api/topic-debates`
+
+基于一个话题创建快速话题辩论。
+
+请求：
+
+```json
+{
+  "topic": "AI 编程会不会降低初级程序员的价值？",
+  "background": "从未来 3 年就业市场和团队协作角度讨论。",
+  "user_question": "哪些能力会更重要？"
+}
+```
+
+字段说明：
+
+- `topic`：必填，话题或辩题，不允许为空白。
+- `background`：可选，背景说明。
+- `user_question`：可选，用户希望重点关注的问题。
+
+响应字段同 `DebateRead`。后端会创建一条特殊文章记录：
+
+- `title`：话题。
+- `source`：固定为 `topic`。
+- `content`：背景说明；如果未提供背景说明，则使用话题本身。
+- `user_question`：关注问题。
+
+该接口会立即返回新辩论，后台执行 5 阶段快速话题辩论。前端可继续轮询 `GET /api/debates/{debate_id}`。
 
 `status` 枚举：
 
@@ -196,6 +269,8 @@
 
 `stage` 枚举顺序：
 
+文章辩论使用完整 9 阶段：
+
 1. `moderator_opening`
 2. `pro_opening`
 3. `con_opening`
@@ -206,9 +281,16 @@
 8. `con_closing`
 9. `judge_report`
 
+快速话题辩论使用 5 阶段：
+
+1. `moderator_opening`
+2. `pro_opening`
+3. `con_opening`
+4. `moderator_midpoint`
+5. `judge_report`
+
 `winner` 枚举：
 
 - `pro`
 - `con`
 - `mixed`
-

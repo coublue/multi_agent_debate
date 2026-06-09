@@ -37,10 +37,22 @@ export interface ArticleListItem {
   title: string;
   source: string | null;
   created_at: ISODateTimeString;
+  debate_count?: number;
+  latest_debate_id?: number | null;
+  latest_debate_status?: DebateStatus | null;
+  latest_debate_winner?: Winner | null;
+  latest_debate_credibility_score?: number | null;
+  latest_debate_created_at?: ISODateTimeString | null;
 }
 
 export interface DebateCreate {
   article_id: number;
+}
+
+export interface TopicDebateCreate {
+  topic: string;
+  background?: string | null;
+  user_question?: string | null;
 }
 
 export interface ModeratorOpening {

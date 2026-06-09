@@ -1,7 +1,7 @@
 from inspect import isawaitable
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlmodel import Session, desc, select
 
 from app.db import get_session
@@ -40,29 +40,29 @@ def _debate_read(debate: Debate) -> DebateRead:
     )
 
 
-async def _run_debate_service(service: Any, session: Session, article_id: int) -> Debate:
-    if hasattr(service, "create_and_run_debate"):
-        result = service.create_and_run_debate(session=session, article_id=article_id)
-    elif hasattr(service, "create_debate"):
+async def _create_debate_service(service: Any, session: Session, article_id: int) -> Debate:
+    if hasattr(service, "create_debate"):
         result = service.create_debate(session=session, article_id=article_id)
-    elif hasattr(service, "run_debate"):
-        debate = Debate(article_id=article_id)
-        session.add(debate)
-        session.commit()
-        session.refresh(debate)
-        result = service.run_debate(session=session, debate_id=debate.id)
     else:
-        raise RuntimeError(
-            "Debate service must expose create_and_run_debate, create_debate, or run_debate."
-        )
+        raise RuntimeError("Debate service must expose create_debate.")
     if isawaitable(result):
         result = await result
     return result
 
 
+async def _run_debate_background_task(service: Any, debate_id: int) -> None:
+    if hasattr(service, "run_debate_background"):
+        result = service.run_debate_background(debate_id=debate_id)
+    else:
+        raise RuntimeError("Debate service must expose run_debate_background.")
+    if isawaitable(result):
+        await result
+
+
 @router.post("", response_model=DebateRead, status_code=status.HTTP_201_CREATED)
 async def create_debate(
     payload: DebateCreate,
+    background_tasks: BackgroundTasks,
     session: Annotated[Session, Depends(get_session)],
     service: Annotated[Any, Depends(get_debate_service)],
 ) -> DebateRead:
@@ -73,7 +73,8 @@ async def create_debate(
             detail="Article not found",
         )
 
-    debate = await _run_debate_service(service, session, payload.article_id)
+    debate = await _create_debate_service(service, session, payload.article_id)
+    background_tasks.add_task(_run_debate_background_task, service, debate.id)
     return _debate_read(debate)
 
 

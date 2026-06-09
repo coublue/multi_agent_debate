@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlmodel import Session, select
 
+from app.db import engine
 from app.agents.orchestrator import (
     DebateOrchestrator,
     DebateStageResult,
@@ -28,6 +29,26 @@ def create_debate(session: Session, article_id: int) -> Debate:
     return debate
 
 
+def create_topic_debate(
+    session: Session,
+    *,
+    topic: str,
+    background: str | None = None,
+    user_question: str | None = None,
+) -> Debate:
+    content = background or topic
+    article = Article(
+        title=topic,
+        source="topic",
+        content=content,
+        user_question=user_question,
+    )
+    session.add(article)
+    session.commit()
+    session.refresh(article)
+    return create_debate(session, article.id)
+
+
 async def create_and_run_debate(
     session: Session,
     article_id: int,
@@ -36,6 +57,15 @@ async def create_and_run_debate(
 ) -> Debate:
     debate = create_debate(session, article_id)
     return await run_debate(session, debate.id, orchestrator=orchestrator)
+
+
+async def run_debate_background(
+    debate_id: int,
+    *,
+    orchestrator: DebateOrchestrator | None = None,
+) -> None:
+    with Session(engine) as session:
+        await run_debate(session, debate_id, orchestrator=orchestrator)
 
 
 async def run_debate(
@@ -62,18 +92,27 @@ async def run_debate(
     session.commit()
     session.refresh(debate)
 
+    article_payload = _article_payload(article)
     runner = orchestrator or DebateOrchestrator()
+    results: list[DebateStageResult] = []
     try:
-        results = await runner.run(_article_payload(article))
-        _save_stage_results(session, debate, results)
+        if hasattr(runner, "run_iter"):
+            async for result in runner.run_iter(article_payload):
+                _save_stage_result(session, debate, result)
+                results.append(result)
+        else:
+            results = await runner.run(article_payload)
+            _save_stage_results(session, debate, results)
         _apply_success_fields(debate, results)
         debate.status = DebateStatus.COMPLETED
     except OrchestrationError as exc:
-        _save_stage_results(session, debate, exc.completed_results)
-        _apply_partial_fields(debate, exc.completed_results)
+        if not results:
+            results = _save_missing_stage_results(session, debate, exc.completed_results)
+        _apply_partial_fields(debate, results)
         debate.status = DebateStatus.FAILED
         debate.error_message = str(exc)
     except Exception as exc:
+        _apply_partial_fields(debate, results)
         debate.status = DebateStatus.FAILED
         debate.error_message = str(exc)
 
@@ -139,6 +178,35 @@ def _save_stage_results(
     return saved
 
 
+def _save_stage_result(
+    session: Session,
+    debate: Debate,
+    result: DebateStageResult,
+) -> AgentMessage:
+    message = AgentMessage(debate_id=debate.id, **result.to_message_dict())
+    session.add(message)
+    session.commit()
+    session.refresh(message)
+    return message
+
+
+def _save_missing_stage_results(
+    session: Session,
+    debate: Debate,
+    results: list[DebateStageResult],
+) -> list[DebateStageResult]:
+    existing_stages = {
+        message.stage
+        for message in session.exec(
+            select(AgentMessage).where(AgentMessage.debate_id == debate.id)
+        ).all()
+    }
+    missing_results = [result for result in results if result.stage not in existing_stages]
+    if missing_results:
+        _save_stage_results(session, debate, missing_results)
+    return results
+
+
 def _apply_success_fields(debate: Debate, results: list[DebateStageResult]) -> None:
     by_stage = _results_by_stage(results)
     moderator_opening = by_stage.get(DebateStage.MODERATOR_OPENING, {})
@@ -167,7 +235,7 @@ def _results_by_stage(results: list[DebateStageResult]) -> dict[DebateStage, dic
 
 
 def _article_payload(article: Article) -> dict[str, Any]:
-    return {
+    payload = {
         "id": article.id,
         "title": article.title,
         "source": article.source,
@@ -175,6 +243,17 @@ def _article_payload(article: Article) -> dict[str, Any]:
         "user_question": article.user_question,
         "created_at": article.created_at.isoformat(),
     }
+    if article.source == "topic":
+        payload.update(
+            {
+                "debate_mode": "topic",
+                "topic": article.title,
+                "background": article.content,
+            }
+        )
+    else:
+        payload["debate_mode"] = "article"
+    return payload
 
 
 def _as_optional_str(value: Any) -> str | None:

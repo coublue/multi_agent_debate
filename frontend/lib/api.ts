@@ -7,6 +7,7 @@ import type {
   DebateListItem,
   DebateRead,
   HealthCheckRead,
+  TopicDebateCreate,
 } from "./types";
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
@@ -115,8 +116,25 @@ export function getArticle(articleId: number): Promise<ArticleRead> {
   return request<ArticleRead>(`/api/articles/${articleId}`);
 }
 
+export function listArticleDebates(articleId: number): Promise<DebateListItem[]> {
+  return request<DebateListItem[]>(`/api/articles/${articleId}/debates`);
+}
+
+export function deleteArticle(articleId: number): Promise<void> {
+  return request<void>(`/api/articles/${articleId}`, {
+    method: "DELETE",
+  });
+}
+
 export function createDebate(payload: DebateCreate): Promise<DebateRead> {
   return request<DebateRead>("/api/debates", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function createTopicDebate(payload: TopicDebateCreate): Promise<DebateRead> {
+  return request<DebateRead>("/api/topic-debates", {
     method: "POST",
     body: payload,
   });

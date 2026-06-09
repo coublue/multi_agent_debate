@@ -84,7 +84,18 @@ def test_article_api_schema_core_fields_are_stable() -> None:
         "created_at",
         "updated_at",
     }
-    assert _schema_properties(ArticleListItem) == {"id", "title", "source", "created_at"}
+    assert _schema_properties(ArticleListItem) == {
+        "id",
+        "title",
+        "source",
+        "created_at",
+        "debate_count",
+        "latest_debate_id",
+        "latest_debate_status",
+        "latest_debate_winner",
+        "latest_debate_credibility_score",
+        "latest_debate_created_at",
+    }
 
 
 def test_debate_api_schema_core_fields_are_stable() -> None:
@@ -171,7 +182,8 @@ def test_openapi_contract_exposes_health_and_validates_mounted_api_paths() -> No
 
     optional_contracts = {
         "/api/articles": {"post", "get"},
-        "/api/articles/{article_id}": {"get"},
+        "/api/articles/{article_id}": {"delete", "get"},
+        "/api/articles/{article_id}/debates": {"get"},
         "/api/debates": {"post", "get"},
         "/api/debates/{debate_id}": {"delete", "get"},
     }

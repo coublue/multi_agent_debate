@@ -1,0 +1,8 @@
+.next/
+.next/cache/
+node_modules/
+out/
+dist/
+*.log
+.env*
+!.env.example

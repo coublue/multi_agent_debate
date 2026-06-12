@@ -64,9 +64,17 @@
 │   ├── tailwind.config.ts
 │   └── tsconfig.json
 ├── docs/
+│   ├── api-spec.md                # 后端 API 契约、请求响应结构与接口说明
+│   ├── architecture.md            # 系统架构、模块关系和核心数据流说明
+│   ├── v1-development-plan.md     # 第一阶段开发计划
+│   ├── v1-development-handoff.md  # 第一阶段交接手册
+│   ├── v2-development-plan.md     # 第二阶段开发计划
+│   ├── v2-development-handoff.md  # 第二阶段交接手册
+│   ├── v3-development-plan.md     # 第三阶段开发计划
+│   └── v3-development-handoff.md  # 第三阶段交接手册
 ├── .env.example
 ├── pytest.ini
-└── multi_agent_debate.md
+└── README.md
 ```
 
 ## 环境变量
@@ -96,10 +104,12 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 
 ```powershell
 cd E:\Codexproject\multi_agent_debate
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+conda create -n multi_agent_debate python=3.11
+conda activate multi_agent_debate
 pip install -r backend\requirements.txt
 ```
+
+其中 `multi_agent_debate` 是示例环境名，可以替换成你自己的 conda 环境名。
 
 前端：
 
@@ -114,7 +124,7 @@ npm install
 
 ```powershell
 cd E:\Codexproject\multi_agent_debate
-.\.venv\Scripts\Activate.ps1
+conda activate multi_agent_debate
 uvicorn app.main:app --app-dir backend --reload
 ```
 
@@ -136,7 +146,7 @@ npm run dev
 
 ```powershell
 cd E:\Codexproject\multi_agent_debate
-.\.venv\Scripts\Activate.ps1
+conda activate multi_agent_debate
 pytest
 ```
 

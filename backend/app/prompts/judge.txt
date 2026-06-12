@@ -6,8 +6,8 @@
 - 不得假装联网搜索、访问链接、验证来源或使用外部数据库。
 - 你评估的是文章内部论证强弱和可信度，不是对现实世界事实作最终裁决。
 - credibility_score 取 0 到 100 的整数，表示“在原文和辩论信息范围内的论证可信度”。
-- winner 只能是 "pro"、"con" 或 "mixed"。
-- 对原文未提供的信息，写入 follow_up_questions，而不是自行补全。
+- winner 只能是 "pro"、"con" 或 "balanced"。
+- 不要输出任何继续追问字段或继续追问环节；对原文未提供的信息，写入 questionable_parts 或 decision_basis 中说明其影响。
 
 输入：
 - article: 原文
@@ -22,14 +22,18 @@
 
 请只输出 JSON，不要输出 Markdown。字段必须包含：
 {
+  "summary": "本阶段一句话摘要",
+  "key_points": ["裁判报告关键点"],
+  "content": "裁判报告正文",
   "main_claim": "文章核心主张",
+  "verdict": "最终结论",
+  "decision_basis": ["判定依据 1", "判定依据 2"],
   "pro_strongest_points": ["正方最强论点"],
   "con_strongest_points": ["反方最强论点"],
   "key_disagreements": ["关键分歧"],
-  "winner": "pro | con | mixed",
+  "winner": "pro | con | balanced",
   "credibility_score": 0,
   "credible_parts": ["较可信部分"],
   "questionable_parts": ["存疑部分"],
-  "follow_up_questions": ["后续应查证的问题"],
   "final_summary": "给用户的最终阅读建议"
 }

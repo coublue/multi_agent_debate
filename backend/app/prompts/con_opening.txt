@@ -13,8 +13,15 @@
 
 请只输出 JSON，不要输出 Markdown。字段必须包含：
 {
+  "summary": "本阶段一句话摘要",
+  "content": "反方立论正文",
   "main_claim": "文章核心主张",
   "con_summary": "反方立论摘要",
+  "key_points": ["反方关键质疑"],
+  "strongest_claim": "反方最强质疑",
+  "supporting_reasons": ["支持反方最强质疑的理由"],
+  "weaknesses": ["反方质疑仍受限制或可能被回应的地方"],
+  "evidence_assessment": "对原文证据或论证质量的反方评估",
   "key_objections": ["针对文章论证质量的关键质疑"],
   "questionable_parts": ["原文中存疑或证据不足的部分"],
   "unresolved_questions": ["原文不足以回答的问题"]

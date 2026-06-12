@@ -4,7 +4,7 @@ from typing import Optional
 from sqlalchemy import Column, JSON
 from sqlmodel import Field, SQLModel
 
-from app.models.debate import DebateStage
+from app.models.debate import DebateStage, enum_value_column
 
 
 class AgentMessage(SQLModel, table=True):
@@ -15,7 +15,9 @@ class AgentMessage(SQLModel, table=True):
     agent_name: str = Field(index=True)
     agent_role: str = Field(index=True)
     round_index: int = Field(default=0, ge=0)
-    stage: DebateStage = Field(index=True)
+    stage: DebateStage = Field(
+        sa_column=enum_value_column(DebateStage, nullable=False, index=True),
+    )
     message_type: str = Field(default="text", index=True)
     content: dict = Field(sa_column=Column(JSON))
     target_agent: Optional[str] = Field(default=None, index=True)

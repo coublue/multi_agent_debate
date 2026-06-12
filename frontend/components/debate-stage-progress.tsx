@@ -2,10 +2,11 @@ import type {
   AgentMessageRead,
   DebateStage as DebateStageValue,
   DebateStatus,
+  StageMode,
 } from "@/lib/types";
 
 type StageProgressState = "completed" | "current" | "pending" | "failed";
-export type DebateStageMode = "article" | "topic";
+export type DebateStageMode = "article" | "topic" | "topic_3" | StageMode;
 
 type DebateStageProgressProps = {
   messages: AgentMessageRead[];
@@ -33,6 +34,12 @@ export const TOPIC_STAGE_ORDER: DebateStageValue[] = [
   "judge_report",
 ];
 
+export const TOPIC_3_STAGE_ORDER: DebateStageValue[] = [
+  "moderator_opening",
+  "moderator_midpoint",
+  "judge_report",
+];
+
 export const STAGE_LABELS: Record<DebateStageValue, string> = {
   moderator_opening: "主持人开场",
   pro_opening: "正方开篇",
@@ -43,6 +50,30 @@ export const STAGE_LABELS: Record<DebateStageValue, string> = {
   pro_closing: "正方总结",
   con_closing: "反方总结",
   judge_report: "裁判报告",
+};
+
+const STAGE_ROLE_LABELS: Record<DebateStageValue, string> = {
+  moderator_opening: "主持人",
+  pro_opening: "正方",
+  con_opening: "反方",
+  pro_rebuttal: "正方",
+  con_rebuttal: "反方",
+  moderator_midpoint: "主持人",
+  pro_closing: "正方",
+  con_closing: "反方",
+  judge_report: "裁判",
+};
+
+const STAGE_DESCRIPTIONS: Record<DebateStageValue, string> = {
+  moderator_opening: "定义辩题、核心主张和讨论边界",
+  pro_opening: "提出支持立场和主要理由",
+  con_opening: "提出反对立场和主要理由",
+  pro_rebuttal: "回应反方质疑并补强论证",
+  con_rebuttal: "回应正方论证并指出风险",
+  moderator_midpoint: "梳理交锋焦点和关键分歧",
+  pro_closing: "收束正方最强结论",
+  con_closing: "收束反方最强结论",
+  judge_report: "给出最终判断和可信度",
 };
 
 const STATE_LABELS: Record<StageProgressState, string> = {
@@ -67,7 +98,15 @@ const DOT_STYLES: Record<StageProgressState, string> = {
 };
 
 export function getStageOrder(mode: DebateStageMode = "article") {
-  return mode === "topic" ? TOPIC_STAGE_ORDER : ARTICLE_STAGE_ORDER;
+  if (mode === "topic_3") {
+    return TOPIC_3_STAGE_ORDER;
+  }
+
+  if (mode === "topic" || mode === "topic_5") {
+    return TOPIC_STAGE_ORDER;
+  }
+
+  return ARTICLE_STAGE_ORDER;
 }
 
 export function DebateStageProgress({
@@ -132,11 +171,16 @@ export function DebateStageProgress({
                 {index + 1}
               </span>
               <span className="min-w-0">
-                <span className="block break-words text-sm font-semibold">
-                  {STAGE_LABELS[stage]}
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="block break-words text-sm font-semibold">
+                    {STAGE_LABELS[stage]}
+                  </span>
+                  <span className="rounded-full border border-current/20 px-1.5 py-0.5 text-[11px] font-medium">
+                    {STAGE_ROLE_LABELS[stage]}
+                  </span>
                 </span>
-                <span className="mt-1 block text-xs">
-                  {STATE_LABELS[stageState]}
+                <span className="mt-1 block text-xs leading-5">
+                  {STATE_LABELS[stageState]} · {STAGE_DESCRIPTIONS[stage]}
                 </span>
               </span>
             </li>

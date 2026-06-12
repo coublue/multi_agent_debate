@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { TopicDebateForm } from "@/components/topic-debate-form";
 import { createTopicDebate } from "@/lib/api";
@@ -12,6 +12,20 @@ export default function NewTopicDebatePage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initialValue, setInitialValue] = useState<Partial<TopicDebateCreate>>({});
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const topic = params.get("topic")?.trim();
+    const background = params.get("background")?.trim();
+    const userQuestion = params.get("user_question")?.trim();
+
+    setInitialValue({
+      topic: topic || undefined,
+      background: background || undefined,
+      user_question: userQuestion || undefined,
+    });
+  }, []);
 
   async function handleSubmit(values: TopicDebateCreate) {
     try {
@@ -51,7 +65,13 @@ export default function NewTopicDebatePage() {
       </section>
 
       <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <TopicDebateForm onSubmit={handleSubmit} loading={submitting} error={error} />
+        <TopicDebateForm
+          error={error}
+          initialValue={initialValue}
+          key={`${initialValue.topic ?? ""}-${initialValue.user_question ?? ""}`}
+          loading={submitting}
+          onSubmit={handleSubmit}
+        />
       </section>
     </main>
   );

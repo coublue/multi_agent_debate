@@ -37,21 +37,35 @@ def test_prompt_files_exist_and_include_core_constraints():
 def test_json_prompts_include_expected_output_fields():
     expected_fields = {
         "moderator_opening.txt": [
+            "summary",
+            "content",
             "main_claim",
             "debate_topic",
+            "debate_focus",
             "key_points",
             "controversial_points",
+            "disagreement_map",
             "rules",
         ],
         "moderator_midpoint.txt": [
+            "summary",
+            "key_points",
+            "content",
             "pro_summary",
             "con_summary",
+            "debate_focus",
             "key_disagreements",
+            "disagreement_map",
             "unresolved_questions",
             "focus_for_closing",
         ],
         "judge.txt": [
+            "summary",
+            "key_points",
+            "content",
             "main_claim",
+            "verdict",
+            "decision_basis",
             "pro_strongest_points",
             "con_strongest_points",
             "key_disagreements",
@@ -59,7 +73,6 @@ def test_json_prompts_include_expected_output_fields():
             "credibility_score",
             "credible_parts",
             "questionable_parts",
-            "follow_up_questions",
             "final_summary",
         ],
     }
@@ -68,6 +81,13 @@ def test_json_prompts_include_expected_output_fields():
         text = (PROMPT_DIR / prompt_file).read_text(encoding="utf-8")
         for field in fields:
             assert field in text
+
+    assert "follow_up_questions" not in (PROMPT_DIR / "judge.txt").read_text(
+        encoding="utf-8"
+    )
+    assert "follow_up_questions" not in (PROMPT_DIR / "topic_judge.txt").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_agent_prompt_includes_context_as_json():

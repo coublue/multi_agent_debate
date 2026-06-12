@@ -31,6 +31,10 @@ function formatWinner(winner?: string | null) {
     return "综合结论";
   }
 
+  if (winner === "balanced") {
+    return "均衡结论";
+  }
+
   if (winner === "pro") {
     return "正方";
   }

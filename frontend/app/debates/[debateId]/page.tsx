@@ -5,21 +5,21 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { DebateStage } from "@/components/debate-stage";
+import { DebateSummaryPanel } from "@/components/debate-summary-panel";
 import {
   DebateStageProgress,
   type DebateStageMode,
   getStageOrder,
 } from "@/components/debate-stage-progress";
-import { DebateStatus } from "@/components/debate-status";
+import {
+  DebateViewTabs,
+  type DebateViewMode,
+} from "@/components/debate-view-tabs";
+import { DisagreementMap } from "@/components/disagreement-map";
 import { JudgeReport } from "@/components/judge-report";
-import { deleteDebate, getDebate } from "@/lib/api";
-import type { DebateDetailRead, Winner } from "@/lib/types";
-
-const WINNER_TEXT: Record<Winner, string> = {
-  pro: "正方",
-  con: "反方",
-  mixed: "综合结论",
-};
+import { ReportActions } from "@/components/report-actions";
+import { deleteDebate, getDebate, rerunDebate } from "@/lib/api";
+import type { DebateDetailRead } from "@/lib/types";
 
 export default function DebateDetailPage() {
   const params = useParams<{ debateId: string }>();
@@ -28,7 +28,9 @@ export default function DebateDetailPage() {
   const [debate, setDebate] = useState<DebateDetailRead | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [rerunning, setRerunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<DebateViewMode>("overview");
 
   useEffect(() => {
     let alive = true;
@@ -96,8 +98,33 @@ export default function DebateDetailPage() {
     }
   }
 
+  async function handleRerunDebate() {
+    if (!debate || debate.status !== "failed") {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `确认重新运行整场辩论吗？\n\n旧的阶段消息和失败结果会被清空，并从第一阶段重新开始。\n\n${debate.article.title}`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setRerunning(true);
+      setError(null);
+      await rerunDebate(debate.id);
+      const refreshed = await getDebate(debate.id);
+      setDebate(refreshed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "重新运行辩论失败。");
+    } finally {
+      setRerunning(false);
+    }
+  }
+
   const isTopicDebate = debate?.article.source === "topic";
-  const debateMode: DebateStageMode = isTopicDebate ? "topic" : "article";
+  const debateMode = debate ? getDebateMode(debate) : "article";
   const stageOrder = getStageOrder(debateMode);
   const visibleStageSet = new Set(stageOrder);
   const visibleMessageCount =
@@ -135,95 +162,101 @@ export default function DebateDetailPage() {
 
       {debate ? (
         <>
-          <section className="mb-6">
-            <p className="mb-2 text-sm font-medium text-slate-500">
-              辩论 #{debate.id}
-            </p>
-            <div className="flex flex-wrap items-start gap-3">
-              <h1 className="max-w-4xl break-words text-2xl font-semibold text-slate-950 sm:text-3xl">
-                {debate.article.title}
-              </h1>
-              {isTopicDebate ? (
-                <span className="mt-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
-                  话题辩论
-                </span>
-              ) : null}
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <DebateStatus status={debate.status} />
-              {typeof debate.credibility_score === "number" ? (
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                  可信度 {debate.credibility_score}/100
-                </span>
-              ) : null}
-              {debate.winner ? (
-                <span className="text-sm text-slate-500">
-                  结论方：{WINNER_TEXT[debate.winner]}
-                </span>
-              ) : null}
-            </div>
-          </section>
-
-          {debate.error_message ? (
-            <StateMessage tone="error" text={debate.error_message} />
-          ) : null}
-
-          <DebateStageProgress
-            messages={debate.messages}
-            mode={debateMode}
-            status={debate.status}
+          <DebateSummaryPanel
+            debate={debate}
+            isTopicDebate={Boolean(isTopicDebate)}
+            onRerun={handleRerunDebate}
+            rerunning={rerunning}
+            stageOrder={stageOrder}
+            visibleMessageCount={visibleMessageCount}
           />
 
-          <section className="mb-5 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
-            <article className="min-w-0 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="mb-4 text-lg font-semibold text-slate-950">
-                {isTopicDebate ? "话题背景" : "文章"}
-              </h2>
-              {!isTopicDebate && debate.article.source ? (
-                <p className="mb-2 break-words text-sm text-slate-600">
-                  来源：{debate.article.source}
-                </p>
-              ) : null}
-              {debate.article.user_question ? (
-                <p className="mb-4 break-words border-l-4 border-blue-500 pl-3 text-sm leading-6 text-slate-700">
-                  关注问题：{debate.article.user_question}
-                </p>
-              ) : null}
-              <p className="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words pr-1 text-sm leading-7 text-slate-700">
-                {debate.article.content}
-              </p>
-            </article>
-
-            <aside className="min-w-0 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="mb-4 text-lg font-semibold text-slate-950">
-                辩论概要
-              </h2>
-              <KeyValue label="辩论类型" value={isTopicDebate ? "话题辩论" : "文章辩论"} />
-              <KeyValue label="核心主张" value={debate.main_claim} />
-              <KeyValue label="辩题" value={debate.debate_topic} />
-              <KeyValue label="创建时间" value={formatDate(debate.created_at)} />
-              <KeyValue label="更新时间" value={formatDate(debate.updated_at)} />
-            </aside>
-          </section>
-
           <section className="mb-5 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-slate-950">
-                {stageOrder.length} 阶段消息
-              </h2>
-              <span className="text-sm text-slate-500">
-                {visibleMessageCount} 条输出
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">
+                  Markdown 报告
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  导出当前辩论的结论、关键观点、分歧和阶段记录。
+                </p>
+              </div>
+              <ReportActions debate={debate} />
             </div>
-            <DebateStage messages={debate.messages} mode={debateMode} />
           </section>
 
-          <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <h2 className="mb-4 text-lg font-semibold text-slate-950">
-              最终裁判报告
-            </h2>
-            <JudgeReport report={debate.final_report} />
-          </section>
+          <DebateViewTabs onChange={setActiveView} value={activeView} />
+
+          {activeView === "overview" ? (
+            <div className="space-y-5">
+              <section className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+                <article className="min-w-0 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                  <h2 className="mb-4 text-lg font-semibold text-slate-950">
+                    {isTopicDebate ? "话题背景" : "文章"}
+                  </h2>
+                  {!isTopicDebate && debate.article.source ? (
+                    <p className="mb-2 break-words text-sm text-slate-600">
+                      来源：{debate.article.source}
+                    </p>
+                  ) : null}
+                  {debate.article.user_question ? (
+                    <p className="mb-4 break-words border-l-4 border-blue-500 pl-3 text-sm leading-6 text-slate-700">
+                      关注问题：{debate.article.user_question}
+                    </p>
+                  ) : null}
+                  <p className="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words pr-1 text-sm leading-7 text-slate-700">
+                    {debate.article.content}
+                  </p>
+                </article>
+
+                <aside className="min-w-0 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                  <h2 className="mb-4 text-lg font-semibold text-slate-950">
+                    辩论概要
+                  </h2>
+                  <KeyValue label="核心主张" value={debate.main_claim} />
+                  <KeyValue label="辩题" value={debate.debate_topic} />
+                  <KeyValue label="辩论深度" value={formatDebateDepth(debate.debate_depth)} />
+                  <KeyValue label="输出风格" value={formatOutputStyle(debate.output_style)} />
+                  <KeyValue label="阶段模式" value={formatStageMode(debate.stage_mode, isTopicDebate)} />
+                  <KeyValue label="创建时间" value={formatDate(debate.created_at)} />
+                  <KeyValue label="更新时间" value={formatDate(debate.updated_at)} />
+                </aside>
+              </section>
+
+              <DisagreementMap messages={debate.messages} />
+            </div>
+          ) : null}
+
+          {activeView === "process" ? (
+            <div className="space-y-5">
+              <DebateStageProgress
+                messages={debate.messages}
+                mode={debateMode}
+                status={debate.status}
+              />
+
+              <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold text-slate-950">
+                    {stageOrder.length} 阶段消息
+                  </h2>
+                  <span className="text-sm text-slate-500">
+                    {visibleMessageCount} 条输出
+                  </span>
+                </div>
+                <DebateStage messages={debate.messages} mode={debateMode} />
+              </section>
+            </div>
+          ) : null}
+
+          {activeView === "report" ? (
+            <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <h2 className="mb-4 text-lg font-semibold text-slate-950">
+                最终裁判报告
+              </h2>
+              <JudgeReport report={debate.final_report} />
+            </section>
+          ) : null}
         </>
       ) : null}
     </main>
@@ -275,4 +308,67 @@ function formatDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function getDebateMode(debate: DebateDetailRead): DebateStageMode {
+  if (debate.stage_mode === "topic_3") {
+    return "topic_3";
+  }
+
+  if (debate.stage_mode === "topic_5") {
+    return "topic";
+  }
+
+  if (debate.stage_mode === "article_9") {
+    return "article";
+  }
+
+  return debate.article.source === "topic" ? "topic" : "article";
+}
+
+function formatDebateDepth(value: DebateDetailRead["debate_depth"]) {
+  if (value === "quick") {
+    return "快速";
+  }
+
+  if (value === "deep") {
+    return "深度";
+  }
+
+  if (value === "standard") {
+    return "标准";
+  }
+
+  return null;
+}
+
+function formatOutputStyle(value: DebateDetailRead["output_style"]) {
+  if (value === "concise") {
+    return "简洁";
+  }
+
+  if (value === "detailed") {
+    return "详细";
+  }
+
+  return null;
+}
+
+function formatStageMode(
+  value: DebateDetailRead["stage_mode"],
+  isTopicDebate?: boolean,
+) {
+  if (value === "topic_3") {
+    return "话题 3 阶段极简";
+  }
+
+  if (value === "topic_5") {
+    return "话题 5 阶段标准";
+  }
+
+  if (value === "article_9") {
+    return "文章 9 阶段";
+  }
+
+  return isTopicDebate ? "话题 5 阶段标准" : "文章 9 阶段";
 }

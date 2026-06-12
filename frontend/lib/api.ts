@@ -148,6 +148,12 @@ export function getDebate(debateId: number): Promise<DebateDetailRead> {
   return request<DebateDetailRead>(`/api/debates/${debateId}`);
 }
 
+export function rerunDebate(debateId: number): Promise<DebateRead> {
+  return request<DebateRead>(`/api/debates/${debateId}/rerun`, {
+    method: "POST",
+  });
+}
+
 export function deleteDebate(debateId: number): Promise<void> {
   return request<void>(`/api/debates/${debateId}`, {
     method: "DELETE",

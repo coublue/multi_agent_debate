@@ -13,16 +13,42 @@ from app.agents.orchestrator import (
 )
 from app.models.agent_message import AgentMessage
 from app.models.article import Article
-from app.models.debate import Debate, DebateStage, DebateStatus
+from app.models.debate import (
+    Debate,
+    DebateDepth,
+    DebateStage,
+    DebateStatus,
+    OutputStyle,
+    StageMode,
+)
 from app.services.article_service import get_article
 
 
-def create_debate(session: Session, article_id: int) -> Debate:
+def create_debate(
+    session: Session,
+    article_id: int,
+    *,
+    debate_depth: DebateDepth | str = DebateDepth.STANDARD,
+    output_style: OutputStyle | str | None = None,
+    stage_mode: StageMode | str | None = None,
+) -> Debate:
     article = get_article(session, article_id)
     if article is None:
         raise ValueError(f"Article {article_id} not found")
 
-    debate = Debate(article_id=article_id, status=DebateStatus.PENDING)
+    debate_depth, output_style, stage_mode = _resolve_debate_config(
+        article,
+        debate_depth=debate_depth,
+        output_style=output_style,
+        stage_mode=stage_mode,
+    )
+    debate = Debate(
+        article_id=article_id,
+        status=DebateStatus.PENDING,
+        debate_depth=debate_depth,
+        output_style=output_style,
+        stage_mode=stage_mode,
+    )
     session.add(debate)
     session.commit()
     session.refresh(debate)
@@ -35,6 +61,9 @@ def create_topic_debate(
     topic: str,
     background: str | None = None,
     user_question: str | None = None,
+    debate_depth: DebateDepth | str = DebateDepth.STANDARD,
+    output_style: OutputStyle | str | None = OutputStyle.CONCISE,
+    stage_mode: StageMode | str | None = StageMode.TOPIC_5,
 ) -> Debate:
     content = background or topic
     article = Article(
@@ -46,7 +75,13 @@ def create_topic_debate(
     session.add(article)
     session.commit()
     session.refresh(article)
-    return create_debate(session, article.id)
+    return create_debate(
+        session,
+        article.id,
+        debate_depth=debate_depth,
+        output_style=output_style,
+        stage_mode=stage_mode,
+    )
 
 
 async def create_and_run_debate(
@@ -92,7 +127,7 @@ async def run_debate(
     session.commit()
     session.refresh(debate)
 
-    article_payload = _article_payload(article)
+    article_payload = _article_payload(article, debate)
     runner = orchestrator or DebateOrchestrator()
     results: list[DebateStageResult] = []
     try:
@@ -160,6 +195,34 @@ def delete_debate(session: Session, debate_id: int) -> bool:
     session.delete(debate)
     session.commit()
     return True
+
+
+def rerun_debate(session: Session, debate_id: int) -> Debate | None:
+    debate = session.get(Debate, debate_id)
+    if debate is None:
+        return None
+
+    if debate.status != DebateStatus.FAILED:
+        raise ValueError("Only failed debates can be rerun")
+
+    messages = session.exec(
+        select(AgentMessage).where(AgentMessage.debate_id == debate_id)
+    ).all()
+    for message in messages:
+        session.delete(message)
+
+    debate.status = DebateStatus.PENDING
+    debate.main_claim = None
+    debate.debate_topic = None
+    debate.final_report = None
+    debate.winner = None
+    debate.credibility_score = None
+    debate.error_message = None
+    debate.updated_at = datetime.now(UTC)
+    session.add(debate)
+    session.commit()
+    session.refresh(debate)
+    return debate
 
 
 def _save_stage_results(
@@ -234,7 +297,7 @@ def _results_by_stage(results: list[DebateStageResult]) -> dict[DebateStage, dic
     return {result.stage: result.content for result in results}
 
 
-def _article_payload(article: Article) -> dict[str, Any]:
+def _article_payload(article: Article, debate: Debate | None = None) -> dict[str, Any]:
     payload = {
         "id": article.id,
         "title": article.title,
@@ -243,6 +306,14 @@ def _article_payload(article: Article) -> dict[str, Any]:
         "user_question": article.user_question,
         "created_at": article.created_at.isoformat(),
     }
+    if debate is not None:
+        payload.update(
+            {
+                "debate_depth": debate.debate_depth.value,
+                "output_style": debate.output_style.value,
+                "stage_mode": debate.stage_mode.value,
+            }
+        )
     if article.source == "topic":
         payload.update(
             {
@@ -254,6 +325,27 @@ def _article_payload(article: Article) -> dict[str, Any]:
     else:
         payload["debate_mode"] = "article"
     return payload
+
+
+def _resolve_debate_config(
+    article: Article,
+    *,
+    debate_depth: DebateDepth | str,
+    output_style: OutputStyle | str | None,
+    stage_mode: StageMode | str | None,
+) -> tuple[DebateDepth, OutputStyle, StageMode]:
+    depth = DebateDepth(debate_depth)
+    is_topic = article.source == "topic"
+    default_style = OutputStyle.CONCISE if is_topic else OutputStyle.DETAILED
+    default_stage_mode = StageMode.TOPIC_5 if is_topic else StageMode.ARTICLE_9
+    style = OutputStyle(output_style) if output_style is not None else default_style
+    mode = StageMode(stage_mode) if stage_mode is not None else default_stage_mode
+
+    if is_topic and mode == StageMode.ARTICLE_9:
+        raise ValueError("Topic debates only support topic_3 or topic_5 stage modes")
+    if not is_topic and mode != StageMode.ARTICLE_9:
+        raise ValueError("Article debates only support article_9 stage mode")
+    return depth, style, mode
 
 
 def _as_optional_str(value: Any) -> str | None:

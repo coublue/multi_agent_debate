@@ -1,22 +1,26 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models.debate import DebateStage, DebateStatus
+from app.models.debate import DebateDepth, DebateStage, DebateStatus, OutputStyle, StageMode
 from app.schemas.agent_outputs import JudgeReport
-from app.schemas.debate import AgentMessageRead, DebateRead
+from app.schemas.debate import AgentMessageRead, DebateCreate, DebateRead, TopicDebateCreate
 
 
 def _judge_report_data(**overrides):
     data = {
         "main_claim": "The article's main claim",
+        "summary": "The judge summarizes the debate.",
+        "key_points": ["The evidence is plausible but incomplete."],
+        "content": "Read as a plausible but not settled argument.",
+        "verdict": "The article is partly persuasive within the submitted text.",
+        "decision_basis": ["The article gives examples but lacks decisive proof."],
         "pro_strongest_points": ["The argument uses relevant examples."],
         "con_strongest_points": ["The evidence is incomplete."],
         "key_disagreements": ["Whether the examples justify the conclusion."],
-        "winner": "mixed",
+        "winner": "balanced",
         "credibility_score": 72,
         "credible_parts": ["The narrow descriptive claim is plausible."],
         "questionable_parts": ["The broad causal claim needs more evidence."],
-        "follow_up_questions": ["What primary sources support the claim?"],
         "final_summary": "Read as a plausible but not settled argument.",
     }
     data.update(overrides)
@@ -24,7 +28,7 @@ def _judge_report_data(**overrides):
 
 
 def test_judge_report_accepts_supported_winners():
-    for winner in ("pro", "con", "mixed"):
+    for winner in ("pro", "con", "balanced", "mixed"):
         report = JudgeReport(**_judge_report_data(winner=winner))
         assert report.winner == winner
 
@@ -55,6 +59,12 @@ def test_status_contract_values_are_fixed():
     }
 
 
+def test_lightweight_config_contract_values_are_fixed():
+    assert {depth.value for depth in DebateDepth} == {"quick", "standard", "deep"}
+    assert {style.value for style in OutputStyle} == {"concise", "detailed"}
+    assert {mode.value for mode in StageMode} == {"article_9", "topic_5", "topic_3"}
+
+
 def test_stage_contract_values_are_fixed():
     assert [stage.value for stage in DebateStage] == [
         "moderator_opening",
@@ -77,7 +87,7 @@ def test_debate_read_validates_status_and_final_report():
         main_claim="The article's main claim",
         debate_topic="Whether the claim is well supported",
         final_report=_judge_report_data(),
-        winner="mixed",
+        winner="balanced",
         credibility_score=72,
         error_message=None,
         created_at="2026-06-07T10:00:00",
@@ -85,8 +95,47 @@ def test_debate_read_validates_status_and_final_report():
     )
 
     assert debate.status == DebateStatus.COMPLETED
+    assert debate.debate_depth == DebateDepth.STANDARD
+    assert debate.output_style == OutputStyle.DETAILED
+    assert debate.stage_mode == StageMode.ARTICLE_9
     assert debate.final_report is not None
-    assert debate.final_report.winner == "mixed"
+    assert debate.final_report.winner == "balanced"
+
+
+def test_debate_create_defaults_defer_to_article_v2_behavior():
+    payload = DebateCreate(article_id=1)
+
+    assert payload.debate_depth == DebateDepth.STANDARD
+    assert payload.output_style is None
+    assert payload.stage_mode is None
+
+
+def test_topic_debate_create_defaults_match_topic_v2_behavior():
+    payload = TopicDebateCreate(topic="AI coding tools")
+
+    assert payload.debate_depth == DebateDepth.STANDARD
+    assert payload.output_style == OutputStyle.CONCISE
+    assert payload.stage_mode == StageMode.TOPIC_5
+
+
+def test_topic_debate_create_rejects_article_stage_mode():
+    with pytest.raises(ValidationError):
+        TopicDebateCreate(topic="AI coding tools", stage_mode="article_9")
+
+
+def test_judge_report_keeps_v2_history_compatible():
+    report = JudgeReport(
+        **_judge_report_data(
+            winner="mixed",
+            follow_up_questions=["What primary sources support the claim?"],
+        )
+    )
+
+    assert report.winner == "mixed"
+    assert report.model_extra is not None
+    assert report.model_extra["follow_up_questions"] == [
+        "What primary sources support the claim?"
+    ]
 
 
 def test_debate_read_rejects_invalid_status():

@@ -17,6 +17,11 @@
 请只输出 JSON，不要输出 Markdown。字段必须包含：
 {
   "summary": "反方一句话立场",
+  "key_points": ["反方关键观点"],
+  "content": "反方观点正文",
+  "strongest_claim": "反方最强论点",
+  "supporting_reasons": ["支持反方最强论点的理由"],
+  "weaknesses": ["反方观点需要注意的边界"],
   "con_points": ["反方观点 1", "反方观点 2", "反方观点 3"],
   "limits": ["反方观点需要注意的边界"]
 }

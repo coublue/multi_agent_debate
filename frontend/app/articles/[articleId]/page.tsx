@@ -75,7 +75,12 @@ export default function ArticleDetailPage() {
     try {
       setCreatingDebate(true);
       setError(null);
-      const debate = await createDebate({ article_id: article.id });
+      const debate = await createDebate({
+        article_id: article.id,
+        debate_depth: "standard",
+        output_style: "detailed",
+        stage_mode: "article_9",
+      });
       router.push(`/debates/${debate.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "创建辩论失败。");

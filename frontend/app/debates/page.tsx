@@ -4,84 +4,98 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { ArticleList } from "@/components/article-list";
-import { createDebate, deleteArticle, listArticles } from "@/lib/api";
-import type { ArticleListItem } from "@/lib/types";
+import { DebateList } from "@/components/debate-list";
+import { deleteDebate, listDebates } from "@/lib/api";
+import type { DebateListItem, DebateStatus } from "@/lib/types";
 
-const DELETE_ARTICLE_CONFIRM_MESSAGE =
-  "删除文章会同时删除该文章下的所有辩论记录，此操作不可恢复。";
+type DebateStatusFilter = "all" | DebateStatus;
+type DebateSortKey = "created_at" | "credibility_score";
 
-type ArticleKindFilter = "all" | "article" | "topic";
-type ArticleSortKey =
-  | "created_at"
-  | "latest_debate_created_at"
-  | "latest_debate_credibility_score";
-
-const KIND_FILTERS: Array<{ label: string; value: ArticleKindFilter }> = [
+const STATUS_FILTERS: Array<{ label: string; value: DebateStatusFilter }> = [
   { label: "全部", value: "all" },
-  { label: "普通文章", value: "article" },
-  { label: "话题", value: "topic" },
+  { label: "排队中", value: "pending" },
+  { label: "辩论中", value: "running" },
+  { label: "已完成", value: "completed" },
+  { label: "失败", value: "failed" },
 ];
 
-const SORT_OPTIONS: Array<{ label: string; value: ArticleSortKey }> = [
+const SORT_OPTIONS: Array<{ label: string; value: DebateSortKey }> = [
   { label: "创建时间", value: "created_at" },
-  { label: "最近辩论时间", value: "latest_debate_created_at" },
-  { label: "最近可信度评分", value: "latest_debate_credibility_score" },
+  { label: "可信度评分", value: "credibility_score" },
 ];
 
-export default function ArticlesPage() {
-  const router = useRouter();
-  const [articles, setArticles] = useState<ArticleListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deletingArticleId, setDeletingArticleId] = useState<number | null>(null);
-  const [creatingDebateArticleId, setCreatingDebateArticleId] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [kindFilter, setKindFilter] = useState<ArticleKindFilter>("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortKey, setSortKey] = useState<ArticleSortKey>("created_at");
+const STATUS_LABELS: Record<DebateStatus, string> = {
+  pending: "排队中",
+  running: "辩论中",
+  completed: "已完成",
+  failed: "失败",
+};
 
-  const filteredArticles = useMemo(() => {
+const WINNER_LABELS: Record<string, string> = {
+  balanced: "均衡结论",
+  con: "反方",
+  mixed: "综合结论",
+  pro: "正方",
+};
+
+export default function DebatesPage() {
+  const router = useRouter();
+  const [debates, setDebates] = useState<DebateListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deletingDebateId, setDeletingDebateId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<DebateStatusFilter>("all");
+  const [sortKey, setSortKey] = useState<DebateSortKey>("created_at");
+
+  const filteredDebates = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
-    return articles
-      .filter((article) => {
-        if (kindFilter === "topic") {
-          return isTopicArticle(article);
+    return debates
+      .filter((debate) => {
+        if (statusFilter === "all") {
+          return true;
         }
-        if (kindFilter === "article") {
-          return !isTopicArticle(article);
-        }
-        return true;
+        return debate.status === statusFilter;
       })
-      .filter((article) => {
+      .filter((debate) => {
         if (!query) {
           return true;
         }
-
-        return [article.title, article.source, article.user_question]
+        return [
+          debate.title,
+          String(debate.article_id),
+          debate.winner,
+          debate.winner ? WINNER_LABELS[debate.winner] : null,
+          debate.status,
+          STATUS_LABELS[debate.status],
+        ]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(query));
       })
-      .sort((left, right) => compareArticles(left, right, sortKey));
-  }, [articles, kindFilter, searchTerm, sortKey]);
+      .sort((left, right) => compareDebates(left, right, sortKey));
+  }, [debates, searchTerm, sortKey, statusFilter]);
 
-  const articleCount = articles.filter((article) => !isTopicArticle(article)).length;
-  const topicCount = articles.length - articleCount;
+  const completedCount = debates.filter((debate) => debate.status === "completed").length;
+  const runningCount = debates.filter(
+    (debate) => debate.status === "pending" || debate.status === "running",
+  ).length;
+  const failedCount = debates.filter((debate) => debate.status === "failed").length;
 
   useEffect(() => {
     let alive = true;
 
-    async function loadArticles() {
+    async function loadDebates() {
       try {
         setLoading(true);
         setError(null);
-        const data = await listArticles();
+        const data = await listDebates();
         if (alive) {
-          setArticles(data);
+          setDebates(data);
         }
       } catch (err) {
         if (alive) {
-          setError(err instanceof Error ? err.message : "文章列表加载失败。");
+          setError(err instanceof Error ? err.message : "辩论列表加载失败。");
         }
       } finally {
         if (alive) {
@@ -90,41 +104,27 @@ export default function ArticlesPage() {
       }
     }
 
-    loadArticles();
+    loadDebates();
     return () => {
       alive = false;
     };
   }, []);
 
-  async function handleDeleteArticle(article: ArticleListItem) {
-    const confirmed = window.confirm(
-      `${DELETE_ARTICLE_CONFIRM_MESSAGE}\n\n确认删除：${article.title}`,
-    );
+  async function handleDeleteDebate(debate: DebateListItem) {
+    const confirmed = window.confirm(`确定删除这场辩论吗？\n\n${debate.title}`);
     if (!confirmed) {
       return;
     }
 
     try {
-      setDeletingArticleId(article.id);
+      setDeletingDebateId(debate.id);
       setError(null);
-      await deleteArticle(article.id);
-      setArticles((current) => current.filter((item) => item.id !== article.id));
+      await deleteDebate(debate.id);
+      setDebates((current) => current.filter((item) => item.id !== debate.id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "删除文章失败。");
+      setError(err instanceof Error ? err.message : "删除辩论失败。");
     } finally {
-      setDeletingArticleId(null);
-    }
-  }
-
-  async function handleCreateDebate(article: ArticleListItem) {
-    try {
-      setCreatingDebateArticleId(article.id);
-      setError(null);
-      const debate = await createDebate({ article_id: article.id });
-      router.push(`/debates/${debate.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "创建辩论失败。");
-      setCreatingDebateArticleId(null);
+      setDeletingDebateId(null);
     }
   }
 
@@ -141,46 +141,46 @@ export default function ArticlesPage() {
 
       <section className="mb-8 flex flex-col gap-4 border-b border-slate-200 pb-7 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
-          <p className="mb-2 text-sm font-medium text-slate-500">Article Library</p>
+          <p className="mb-2 text-sm font-medium text-slate-500">Debate Workspace</p>
           <h1 className="text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">
-            文章库
+            最近辩论
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-            查看已提交的文章，进入详情后可以查看关联辩论，或基于同一篇文章再次发起辩论。
+            查看所有辩论记录，按标题、文章编号、状态或结论搜索，并快速进入详情页。
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-          <span>{articles.length} 条记录</span>
+          <span>{debates.length} 场</span>
           <span className="text-slate-300">/</span>
-          <span>{articleCount} 篇文章</span>
+          <span>{completedCount} 已完成</span>
           <span className="text-slate-300">/</span>
-          <span>{topicCount} 个话题</span>
+          <span>{runningCount} 进行中</span>
+          <span className="text-slate-300">/</span>
+          <span>{failedCount} 失败</span>
         </div>
       </section>
 
       <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        {loading ? <StateMessage text="正在加载文章列表..." /> : null}
+        {loading ? <StateMessage text="正在加载辩论列表..." /> : null}
         {error ? <StateMessage tone="error" text={error} /> : null}
         {!loading && !error ? (
           <div className="space-y-4">
-            <ArticleLibraryControls
-              kindFilter={kindFilter}
-              resultCount={filteredArticles.length}
+            <DebateLibraryControls
+              resultCount={filteredDebates.length}
               searchTerm={searchTerm}
               sortKey={sortKey}
-              totalCount={articles.length}
-              onKindFilterChange={setKindFilter}
+              statusFilter={statusFilter}
+              totalCount={debates.length}
               onSearchTermChange={setSearchTerm}
               onSortKeyChange={setSortKey}
+              onStatusFilterChange={setStatusFilter}
             />
-            <ArticleList
-              articles={filteredArticles}
-              creatingDebateArticleId={creatingDebateArticleId}
-              deletingArticleId={deletingArticleId}
-              emptyMessage="没有符合当前筛选条件的记录。"
-              onCreateDebate={handleCreateDebate}
-              onDeleteArticle={handleDeleteArticle}
-              onSelectArticle={(article) => router.push(`/articles/${article.id}`)}
+            <DebateList
+              debates={filteredDebates}
+              deletingDebateId={deletingDebateId}
+              emptyMessage="没有符合当前筛选条件的辩论。"
+              onDeleteDebate={handleDeleteDebate}
+              onSelectDebate={(debate) => router.push(`/debates/${debate.id}`)}
             />
           </div>
         ) : null}
@@ -189,30 +189,30 @@ export default function ArticlesPage() {
   );
 }
 
-function ArticleLibraryControls({
-  kindFilter,
+function DebateLibraryControls({
   resultCount,
   searchTerm,
   sortKey,
+  statusFilter,
   totalCount,
-  onKindFilterChange,
   onSearchTermChange,
   onSortKeyChange,
+  onStatusFilterChange,
 }: {
-  kindFilter: ArticleKindFilter;
   resultCount: number;
   searchTerm: string;
-  sortKey: ArticleSortKey;
+  sortKey: DebateSortKey;
+  statusFilter: DebateStatusFilter;
   totalCount: number;
-  onKindFilterChange: (value: ArticleKindFilter) => void;
   onSearchTermChange: (value: string) => void;
-  onSortKeyChange: (value: ArticleSortKey) => void;
+  onSortKeyChange: (value: DebateSortKey) => void;
+  onStatusFilterChange: (value: DebateStatusFilter) => void;
 }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        {KIND_FILTERS.map((filter) => {
-          const isActive = kindFilter === filter.value;
+        {STATUS_FILTERS.map((filter) => {
+          const isActive = statusFilter === filter.value;
           return (
             <button
               className={`inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition ${
@@ -221,7 +221,7 @@ function ArticleLibraryControls({
                   : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
               }`}
               key={filter.value}
-              onClick={() => onKindFilterChange(filter.value)}
+              onClick={() => onStatusFilterChange(filter.value)}
               type="button"
             >
               {filter.label}
@@ -230,9 +230,9 @@ function ArticleLibraryControls({
         })}
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
         <label className="space-y-1.5">
-          <span className="text-xs font-medium text-slate-500">搜索标题、来源或关注问题</span>
+          <span className="text-xs font-medium text-slate-500">搜索标题、文章编号、状态或结论</span>
           <input
             className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             onChange={(event) => onSearchTermChange(event.target.value)}
@@ -245,7 +245,7 @@ function ArticleLibraryControls({
           <span className="text-xs font-medium text-slate-500">排序</span>
           <select
             className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            onChange={(event) => onSortKeyChange(event.target.value as ArticleSortKey)}
+            onChange={(event) => onSortKeyChange(event.target.value as DebateSortKey)}
             value={sortKey}
           >
             {SORT_OPTIONS.map((option) => (
@@ -258,17 +258,13 @@ function ArticleLibraryControls({
       </div>
 
       <div className="text-xs text-slate-500">
-        当前显示 {resultCount} 条，共 {totalCount} 条；缺少最近辩论或评分的记录会排在后面。
+        当前显示 {resultCount} 场，共 {totalCount} 场；缺少评分的辩论会排在后面。
       </div>
     </div>
   );
 }
 
-function isTopicArticle(article: ArticleListItem) {
-  return article.source === "topic";
-}
-
-function compareArticles(left: ArticleListItem, right: ArticleListItem, sortKey: ArticleSortKey) {
+function compareDebates(left: DebateListItem, right: DebateListItem, sortKey: DebateSortKey) {
   const leftValue = getSortValue(left, sortKey);
   const rightValue = getSortValue(right, sortKey);
   const leftCreatedAt = getSortValue(left, "created_at") ?? 0;
@@ -286,23 +282,15 @@ function compareArticles(left: ArticleListItem, right: ArticleListItem, sortKey:
   if (rightValue !== leftValue) {
     return rightValue - leftValue;
   }
-
   return rightCreatedAt - leftCreatedAt;
 }
 
-function getSortValue(article: ArticleListItem, sortKey: ArticleSortKey): number | null {
-  if (sortKey === "latest_debate_credibility_score") {
-    return typeof article.latest_debate_credibility_score === "number"
-      ? article.latest_debate_credibility_score
-      : null;
+function getSortValue(debate: DebateListItem, sortKey: DebateSortKey): number | null {
+  if (sortKey === "credibility_score") {
+    return typeof debate.credibility_score === "number" ? debate.credibility_score : null;
   }
 
-  const rawValue = article[sortKey];
-  if (!rawValue) {
-    return null;
-  }
-
-  const timestamp = new Date(rawValue).getTime();
+  const timestamp = new Date(debate.created_at).getTime();
   return Number.isNaN(timestamp) ? null : timestamp;
 }
 

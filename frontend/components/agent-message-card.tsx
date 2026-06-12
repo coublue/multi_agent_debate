@@ -65,19 +65,70 @@ const ROLE_LABELS: Record<string, string> = {
   judge: "裁判",
 };
 
+const VALUE_LABELS: Record<string, string> = {
+  article_9: "文章 9 阶段",
+  balanced: "均衡结论",
+  completed: "已完成",
+  con: "反方",
+  concise: "简洁",
+  deep: "深度",
+  detailed: "详细",
+  failed: "失败",
+  mixed: "综合结论",
+  pending: "排队中",
+  pro: "正方",
+  quick: "快速",
+  running: "辩论中",
+  standard: "标准",
+  topic_3: "话题 3 阶段极简",
+  topic_5: "话题 5 阶段标准",
+};
+
+const AGENT_NAME_LABELS: Record<string, string> = {
+  ConAgent: "反方 Agent",
+  JudgeAgent: "裁判 Agent",
+  ModeratorAgent: "主持人 Agent",
+  ProAgent: "正方 Agent",
+  con: "反方 Agent",
+  judge: "裁判 Agent",
+  moderator: "主持人 Agent",
+  pro: "正方 Agent",
+};
+
 const FIELD_LABELS: Record<string, string> = {
   main_claim: "核心主张",
   debate_topic: "辩题",
   key_points: "关键论点",
   controversial_points: "争议点",
+  content: "完整发言",
   rules: "讨论规则",
   argument: "论证",
   evidence: "证据",
+  evidenceFromArticle: "文章证据",
+  evidence_from_article: "文章证据",
+  "Evidence From Article": "文章证据",
+  "Evidence from Article": "文章证据",
+  evidence_from_text: "原文证据",
   reasoning: "推理",
+  keyObjections: "关键反对意见",
+  key_objections: "关键反对意见",
+  "Key Objections": "关键反对意见",
+  strongest_claim: "最强论点",
+  supporting_reasons: "支持理由",
+  weaknesses: "薄弱点",
+  knownLimits: "已知限制",
+  known_limits: "已知限制",
+  "Known Limits": "已知限制",
+  evidence_assessment: "证据质量判断",
   rebuttal: "反驳",
   summary: "总结",
   pro_points: "正方观点",
   con_points: "反方观点",
+  debate_focus: "辩论焦点",
+  disagreement_map: "争议点矩阵",
+  issue: "争议点",
+  pro_position: "正方立场",
+  con_position: "反方立场",
   limits: "边界说明",
   pro_summary: "正方阶段总结",
   con_summary: "反方阶段总结",
@@ -85,6 +136,8 @@ const FIELD_LABELS: Record<string, string> = {
   unresolved_questions: "未解决问题",
   focus_for_closing: "总结阶段关注点",
   winner: "结论方",
+  verdict: "最终结论",
+  decision_basis: "判定依据",
   credibility_score: "可信度评分",
   credible_parts: "可信部分",
   questionable_parts: "存疑部分",
@@ -106,6 +159,14 @@ function labelize(value: string) {
     return FIELD_LABELS[value];
   }
 
+  const normalized = value
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/\s+/g, "_")
+    .toLowerCase();
+  if (FIELD_LABELS[normalized]) {
+    return FIELD_LABELS[normalized];
+  }
+
   return value
     .replaceAll("_", " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -120,7 +181,11 @@ function renderContent(value: ContentValue, keyPrefix = "content"): ReactNode {
     return (
       <ul className="list-disc space-y-1 break-words pl-5 text-sm leading-6">
         {value.map((item, index) => (
-          <li key={`${keyPrefix}-${index}`}>{renderInlineValue(item)}</li>
+          <li key={`${keyPrefix}-${index}`}>
+            {item && typeof item === "object"
+              ? renderContent(item, `${keyPrefix}-${index}`)
+              : renderInlineValue(item)}
+          </li>
         ))}
       </ul>
     );
@@ -165,7 +230,8 @@ function renderInlineValue(value: ContentValue) {
     return JSON.stringify(value);
   }
 
-  return String(value);
+  const text = String(value);
+  return VALUE_LABELS[text] ?? text;
 }
 
 function getSummary(content: Record<string, unknown>) {
@@ -177,6 +243,10 @@ function getSummary(content: Record<string, unknown>) {
   }
 
   return "结构化发言内容";
+}
+
+function formatAgentName(name: string, role: string) {
+  return AGENT_NAME_LABELS[name] ?? AGENT_NAME_LABELS[role] ?? name;
 }
 
 export function AgentMessageCard({
@@ -214,7 +284,7 @@ export function AgentMessageCard({
                 </span>
               </div>
               <div className="mt-1 break-words text-xs text-slate-500">
-                {message.agent_name}
+                {formatAgentName(message.agent_name, role)}
               </div>
             </div>
 

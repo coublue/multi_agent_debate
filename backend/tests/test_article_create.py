@@ -65,6 +65,7 @@ def test_article_create_get_list_and_health_router() -> None:
                 "id": created["id"],
                 "title": "Local debate article",
                 "source": "unit-test",
+                "user_question": "Is the claim credible?",
                 "created_at": created["created_at"],
                 "debate_count": 0,
                 "latest_debate_id": None,

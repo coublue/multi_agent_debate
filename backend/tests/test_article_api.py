@@ -9,7 +9,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 from app.api.debates import get_debate_service
 from app.db import get_session
 from app.main import app
-from app.models import AgentMessage, Debate, DebateStage, DebateStatus
+from app.models import AgentMessage, Debate, DebateDepth, DebateStage, DebateStatus, OutputStyle, StageMode
 
 
 @contextmanager
@@ -34,7 +34,15 @@ def make_test_client() -> Generator[TestClient, None, None]:
 
 
 class FakeDebateService:
-    def create_debate(self, session: Session, article_id: int) -> Debate:
+    def create_debate(
+        self,
+        session: Session,
+        article_id: int,
+        *,
+        debate_depth: DebateDepth = DebateDepth.STANDARD,
+        output_style: OutputStyle | None = None,
+        stage_mode: StageMode | None = None,
+    ) -> Debate:
         now = datetime.now(UTC)
         existing_count = len(
             session.exec(select(Debate).where(Debate.article_id == article_id)).all()
@@ -42,6 +50,9 @@ class FakeDebateService:
         debate = Debate(
             article_id=article_id,
             status=DebateStatus.COMPLETED,
+            debate_depth=debate_depth,
+            output_style=output_style or OutputStyle.DETAILED,
+            stage_mode=stage_mode or StageMode.ARTICLE_9,
             winner=f"winner-{existing_count + 1}",
             credibility_score=60 + existing_count,
             created_at=now + timedelta(seconds=existing_count),
@@ -114,6 +125,7 @@ def test_article_list_includes_debate_count_and_latest_debate_summary() -> None:
         items = response.json()
         assert len(items) == 1
         assert items[0]["id"] == article["id"]
+        assert items[0]["user_question"] == "Is it credible?"
         assert items[0]["debate_count"] == 2
         assert items[0]["latest_debate_id"] == latest_debate["id"]
         assert items[0]["latest_debate_status"] == "completed"
@@ -142,6 +154,9 @@ def test_article_debates_endpoint_lists_related_debates() -> None:
                 "article_id": article["id"],
                 "title": "Article with debates",
                 "status": "completed",
+                "debate_depth": "standard",
+                "output_style": "detailed",
+                "stage_mode": "article_9",
                 "winner": latest_debate["winner"],
                 "credibility_score": latest_debate["credibility_score"],
                 "created_at": latest_debate["created_at"],
@@ -151,6 +166,9 @@ def test_article_debates_endpoint_lists_related_debates() -> None:
                 "article_id": article["id"],
                 "title": "Article with debates",
                 "status": "completed",
+                "debate_depth": "standard",
+                "output_style": "detailed",
+                "stage_mode": "article_9",
                 "winner": older_debate["winner"],
                 "credibility_score": older_debate["credibility_score"],
                 "created_at": older_debate["created_at"],

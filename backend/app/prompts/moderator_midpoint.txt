@@ -17,9 +17,20 @@
 
 请只输出 JSON，不要输出 Markdown。字段必须包含：
 {
+  "summary": "本阶段一句话摘要",
+  "key_points": ["中场总结的关键点"],
+  "content": "中场总结正文",
   "pro_summary": "正方目前最强论点",
   "con_summary": "反方目前最强论点",
+  "debate_focus": "下半场最应聚焦的争议",
   "key_disagreements": ["双方关键分歧"],
+  "disagreement_map": [
+    {
+      "issue": "争议点",
+      "pro_position": "正方立场",
+      "con_position": "反方立场"
+    }
+  ],
   "unresolved_questions": ["尚未解决、原文不足以确认的问题"],
   "focus_for_closing": "总结陈词需要聚焦的问题"
 }

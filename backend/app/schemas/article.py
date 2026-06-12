@@ -27,6 +27,7 @@ class ArticleListItem(BaseModel):
     id: int
     title: str
     source: Optional[str] = None
+    user_question: Optional[str] = None
     created_at: datetime
     debate_count: int = 0
     latest_debate_id: Optional[int] = None

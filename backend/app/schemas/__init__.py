@@ -1,8 +1,10 @@
 from app.schemas.agent_outputs import (
     AgentTextOutput,
+    DisagreementItem,
     JudgeReport,
     ModeratorMidpoint,
     ModeratorOpening,
+    SideAgentOutput,
 )
 from app.schemas.article import ArticleCreate, ArticleListItem, ArticleRead
 from app.schemas.debate import (
@@ -24,8 +26,10 @@ __all__ = [
     "DebateDetailRead",
     "DebateListItem",
     "DebateRead",
+    "DisagreementItem",
     "JudgeReport",
     "ModeratorMidpoint",
     "ModeratorOpening",
+    "SideAgentOutput",
     "TopicDebateCreate",
 ]

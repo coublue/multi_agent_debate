@@ -9,6 +9,10 @@ function formatWinner(winner: string) {
     return "综合结论";
   }
 
+  if (winner === "balanced") {
+    return "均衡结论";
+  }
+
   if (winner === "pro") {
     return "正方";
   }
@@ -20,7 +24,13 @@ function formatWinner(winner: string) {
   return winner;
 }
 
-function SectionList({ items, title }: { items?: string[]; title: string }) {
+function SectionList({
+  items,
+  title,
+}: {
+  items?: string[] | null;
+  title: string;
+}) {
   return (
     <section>
       <h3 className="mb-2 text-sm font-semibold text-slate-900">{title}</h3>
@@ -90,12 +100,12 @@ export function JudgeReport({ report }: JudgeReportProps) {
           title="存疑部分"
         />
         <SectionList
-          items={report.follow_up_questions}
-          title="后续追问"
-        />
-        <SectionList
           items={report.key_disagreements}
           title="关键分歧"
+        />
+        <SectionList
+          items={report.decision_basis}
+          title="判定依据"
         />
       </div>
 

@@ -8,7 +8,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from app.api.debates import get_debate_service
 from app.db import get_session
 from app.main import app
-from app.models import Debate
+from app.models import Debate, DebateDepth, OutputStyle, StageMode
 from app.services import debate_service
 
 
@@ -43,12 +43,18 @@ class FakeTopicDebateService:
         topic: str,
         background: str | None = None,
         user_question: str | None = None,
+        debate_depth: DebateDepth = DebateDepth.STANDARD,
+        output_style: OutputStyle = OutputStyle.CONCISE,
+        stage_mode: StageMode = StageMode.TOPIC_5,
     ) -> Debate:
         return debate_service.create_topic_debate(
             session=session,
             topic=topic,
             background=background,
             user_question=user_question,
+            debate_depth=debate_depth,
+            output_style=output_style,
+            stage_mode=stage_mode,
         )
 
     async def run_topic_debate_background(self, debate_id: int) -> None:
@@ -74,6 +80,9 @@ def test_create_topic_debate_creates_topic_article_and_pending_debate() -> None:
         assert created["status"] == "pending"
         assert created["winner"] is None
         assert created["final_report"] is None
+        assert created["debate_depth"] == "standard"
+        assert created["output_style"] == "concise"
+        assert created["stage_mode"] == "topic_5"
         assert fake_service.background_runs == [created["id"]]
 
         detail_response = client.get(f"/api/debates/{created['id']}")
@@ -87,6 +96,9 @@ def test_create_topic_debate_creates_topic_article_and_pending_debate() -> None:
             "Discuss the next three years of software jobs."
         )
         assert detail["article"]["user_question"] == "Focus on employment impact."
+        assert detail["debate_depth"] == "standard"
+        assert detail["output_style"] == "concise"
+        assert detail["stage_mode"] == "topic_5"
         assert detail["messages"] == []
 
 
@@ -109,6 +121,28 @@ def test_create_topic_debate_uses_topic_as_content_without_background() -> None:
         assert article["source"] == "topic"
         assert article["content"] == "Remote work improves engineering productivity"
         assert article["user_question"] is None
+
+
+def test_create_topic_debate_accepts_explicit_lightweight_config() -> None:
+    with make_test_client() as client:
+        fake_service = FakeTopicDebateService()
+        app.dependency_overrides[get_debate_service] = lambda: fake_service
+
+        response = client.post(
+            "/api/topic-debates",
+            json={
+                "topic": "Short topic flow",
+                "debate_depth": "quick",
+                "output_style": "detailed",
+                "stage_mode": "topic_3",
+            },
+        )
+
+        assert response.status_code == 201
+        created = response.json()
+        assert created["debate_depth"] == "quick"
+        assert created["output_style"] == "detailed"
+        assert created["stage_mode"] == "topic_3"
 
 
 def test_create_topic_debate_returns_before_debate_execution() -> None:

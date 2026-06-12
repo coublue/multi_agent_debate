@@ -16,9 +16,19 @@
 
 请只输出 JSON，不要输出 Markdown。字段必须包含：
 {
+  "summary": "本阶段一句话摘要",
+  "content": "辩题边界说明正文",
   "main_claim": "把话题整理成一句待讨论主张",
   "debate_topic": "本场快速辩论题目",
+  "debate_focus": "本场快速辩论焦点",
   "key_points": ["本话题需要讨论的角度"],
   "controversial_points": ["正反双方可能分歧的点"],
+  "disagreement_map": [
+    {
+      "issue": "争议点",
+      "pro_position": "正方可能立场",
+      "con_position": "反方可能立场"
+    }
+  ],
   "rules": ["简短讨论规则"]
 }

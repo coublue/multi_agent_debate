@@ -2,6 +2,12 @@ export type ISODateTimeString = string;
 
 export type DebateStatus = "pending" | "running" | "completed" | "failed";
 
+export type DebateDepth = "quick" | "standard" | "deep";
+
+export type OutputStyle = "concise" | "detailed";
+
+export type StageMode = "article_9" | "topic_3" | "topic_5";
+
 export type DebateStage =
   | "moderator_opening"
   | "pro_opening"
@@ -13,13 +19,18 @@ export type DebateStage =
   | "con_closing"
   | "judge_report";
 
-export type Winner = "pro" | "con" | "mixed";
+export type Winner = "pro" | "con" | "mixed" | "balanced";
 
 export interface ArticleCreate {
   title: string;
   source?: string | null;
   content: string;
   user_question?: string | null;
+}
+
+export interface ArticleDebateFormValues extends ArticleCreate {
+  debate_depth: DebateDepth;
+  output_style: OutputStyle;
 }
 
 export interface ArticleRead {
@@ -36,6 +47,7 @@ export interface ArticleListItem {
   id: number;
   title: string;
   source: string | null;
+  user_question?: string | null;
   created_at: ISODateTimeString;
   debate_count?: number;
   latest_debate_id?: number | null;
@@ -47,12 +59,18 @@ export interface ArticleListItem {
 
 export interface DebateCreate {
   article_id: number;
+  debate_depth?: DebateDepth;
+  output_style?: OutputStyle;
+  stage_mode?: StageMode;
 }
 
 export interface TopicDebateCreate {
   topic: string;
   background?: string | null;
   user_question?: string | null;
+  debate_depth?: DebateDepth;
+  output_style?: OutputStyle;
+  stage_mode?: StageMode;
 }
 
 export interface ModeratorOpening {
@@ -73,11 +91,13 @@ export interface ModeratorMidpoint {
 
 export interface JudgeReport {
   main_claim: string;
+  verdict?: string | null;
   pro_strongest_points: string[];
   con_strongest_points: string[];
   key_disagreements: string[];
   winner: Winner;
   credibility_score: number;
+  decision_basis?: string[] | null;
   credible_parts: string[];
   questionable_parts: string[];
   follow_up_questions: string[];
@@ -101,6 +121,9 @@ export interface DebateRead {
   id: number;
   article_id: number;
   status: DebateStatus;
+  debate_depth?: DebateDepth | null;
+  output_style?: OutputStyle | null;
+  stage_mode?: StageMode | null;
   main_claim: string | null;
   debate_topic: string | null;
   final_report: JudgeReport | null;

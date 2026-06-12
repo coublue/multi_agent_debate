@@ -6,8 +6,9 @@
 - 这是话题辩论，不是文章辩论。
 - 不要说“原文未提供”“文章可信度”“证据来自原文”。
 - 不要编造事实、数据或案例。
-- winner 只能是 "pro"、"con" 或 "mixed"。
+- winner 只能是 "pro"、"con" 或 "balanced"。
 - credibility_score 取 0 到 100 的整数，表示本轮观点说服力的综合评分，不表示事实真伪。
+- 不要输出任何继续追问字段或继续追问环节。
 - 输出要短，以列点为主。
 
 输入：
@@ -19,14 +20,18 @@
 
 请只输出 JSON，不要输出 Markdown。字段必须包含：
 {
+  "summary": "本阶段一句话摘要",
+  "key_points": ["裁判结论关键点"],
+  "content": "裁判结论正文",
   "main_claim": "本轮讨论的话题主张",
+  "verdict": "最终结论",
+  "decision_basis": ["判定依据 1", "判定依据 2"],
   "pro_strongest_points": ["正方较有力观点"],
   "con_strongest_points": ["反方较有力观点"],
   "key_disagreements": ["关键分歧"],
-  "winner": "pro | con | mixed",
+  "winner": "pro | con | balanced",
   "credibility_score": 0,
   "credible_parts": ["本轮较有说服力的部分"],
   "questionable_parts": ["仍然需要谨慎看待的部分"],
-  "follow_up_questions": ["可以继续追问的问题"],
   "final_summary": "一句话总结"
 }

@@ -50,3 +50,80 @@ a {
 ::selection {
   background: rgba(15, 118, 110, 0.22);
 }
+
+@keyframes workflow-line {
+  0% {
+    transform: translateX(-140%);
+  }
+  50% {
+    transform: translateX(80%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes workflow-glow {
+  0% {
+    opacity: 0;
+    transform: translateX(-80%);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(20%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(120%);
+  }
+}
+
+@keyframes workflow-card {
+  0%,
+  78%,
+  100% {
+    transform: translateY(0);
+    border-color: rgb(226 232 240);
+    background: rgb(248 250 252);
+    box-shadow: none;
+  }
+  8%,
+  18% {
+    transform: translateY(-5px) scale(1.025);
+    border-color: rgb(94 234 212);
+    background: rgb(255 255 255);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  }
+}
+
+@keyframes workflow-node {
+  0%,
+  78%,
+  100% {
+    transform: scale(1);
+    background: rgb(2 6 23);
+    box-shadow: none;
+  }
+  8%,
+  18% {
+    transform: scale(1.16);
+    background: rgb(13 148 136);
+    box-shadow: 0 0 0 6px rgba(20, 184, 166, 0.12);
+  }
+}
+
+.animate-workflow-line {
+  animation: workflow-line 4.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-workflow-glow {
+  animation: workflow-glow 5.6s ease-in-out infinite;
+}
+
+.animate-workflow-card {
+  animation: workflow-card 5.8s ease-in-out infinite;
+}
+
+.animate-workflow-node {
+  animation: workflow-node 5.8s ease-in-out infinite;
+}

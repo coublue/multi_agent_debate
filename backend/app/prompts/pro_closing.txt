@@ -14,7 +14,14 @@
 
 请只输出 JSON，不要输出 Markdown。字段必须包含：
 {
+  "summary": "本阶段一句话摘要",
+  "key_points": ["正方总结关键点"],
+  "content": "正方总结陈词正文",
   "pro_summary": "正方最终摘要",
+  "strongest_claim": "正方最终最强论点",
+  "supporting_reasons": ["支持正方最终论点的理由"],
+  "weaknesses": ["正方最终仍需承认的限制"],
+  "evidence_assessment": "对原文证据或论证质量的最终正方评估",
   "strongest_article_based_support": ["原文范围内最强支持"],
   "answer_to_key_disagreements": ["对关键分歧的回应"],
   "remaining_limits": ["仍然存在的限制"],

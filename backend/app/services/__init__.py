@@ -14,6 +14,7 @@ from app.services.debate_service import (
     get_debate,
     list_debate_messages,
     list_debates,
+    rerun_debate,
     run_debate,
 )
 
@@ -31,5 +32,6 @@ __all__ = [
     "list_debate_messages",
     "list_debates",
     "list_debates_for_article",
+    "rerun_debate",
     "run_debate",
 ]

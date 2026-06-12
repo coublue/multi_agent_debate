@@ -31,6 +31,9 @@ def _debate_read(debate: Debate) -> DebateRead:
         status=debate.status,
         main_claim=debate.main_claim,
         debate_topic=debate.debate_topic,
+        debate_depth=debate.debate_depth,
+        output_style=debate.output_style,
+        stage_mode=debate.stage_mode,
         final_report=debate.final_report,
         winner=debate.winner,
         credibility_score=debate.credibility_score,
@@ -40,9 +43,19 @@ def _debate_read(debate: Debate) -> DebateRead:
     )
 
 
-async def _create_debate_service(service: Any, session: Session, article_id: int) -> Debate:
+async def _create_debate_service(
+    service: Any,
+    session: Session,
+    payload: DebateCreate,
+) -> Debate:
     if hasattr(service, "create_debate"):
-        result = service.create_debate(session=session, article_id=article_id)
+        result = service.create_debate(
+            session=session,
+            article_id=payload.article_id,
+            debate_depth=payload.debate_depth,
+            output_style=payload.output_style,
+            stage_mode=payload.stage_mode,
+        )
     else:
         raise RuntimeError("Debate service must expose create_debate.")
     if isawaitable(result):
@@ -59,6 +72,20 @@ async def _run_debate_background_task(service: Any, debate_id: int) -> None:
         await result
 
 
+async def _rerun_debate_service(
+    service: Any,
+    session: Session,
+    debate_id: int,
+) -> Debate | None:
+    if hasattr(service, "rerun_debate"):
+        result = service.rerun_debate(session=session, debate_id=debate_id)
+    else:
+        raise RuntimeError("Debate service must expose rerun_debate.")
+    if isawaitable(result):
+        result = await result
+    return result
+
+
 @router.post("", response_model=DebateRead, status_code=status.HTTP_201_CREATED)
 async def create_debate(
     payload: DebateCreate,
@@ -73,7 +100,13 @@ async def create_debate(
             detail="Article not found",
         )
 
-    debate = await _create_debate_service(service, session, payload.article_id)
+    try:
+        debate = await _create_debate_service(service, session, payload)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
     background_tasks.add_task(_run_debate_background_task, service, debate.id)
     return _debate_read(debate)
 
@@ -94,6 +127,9 @@ def list_debates(
             article_id=debate.article_id,
             title=article.title,
             status=debate.status,
+            debate_depth=debate.debate_depth,
+            output_style=debate.output_style,
+            stage_mode=debate.stage_mode,
             winner=debate.winner,
             credibility_score=debate.credibility_score,
             created_at=debate.created_at,
@@ -131,6 +167,31 @@ def get_debate(
     debate_data["article"] = article.model_dump()
     debate_data["messages"] = [AgentMessageRead(**message.model_dump()) for message in messages]
     return DebateDetailRead(**debate_data)
+
+
+@router.post("/{debate_id}/rerun", response_model=DebateRead)
+async def rerun_debate(
+    debate_id: int,
+    background_tasks: BackgroundTasks,
+    session: Annotated[Session, Depends(get_session)],
+    service: Annotated[Any, Depends(get_debate_service)],
+) -> DebateRead:
+    try:
+        debate = await _rerun_debate_service(service, session, debate_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if debate is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Debate not found",
+        )
+
+    background_tasks.add_task(_run_debate_background_task, service, debate.id)
+    return _debate_read(debate)
 
 
 @router.delete("/{debate_id}", status_code=status.HTTP_204_NO_CONTENT)

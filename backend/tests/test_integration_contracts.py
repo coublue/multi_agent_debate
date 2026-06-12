@@ -5,7 +5,14 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.main import app
 from app.models.debate import DebateStage, DebateStatus
-from app.schemas.agent_outputs import AgentTextOutput, JudgeReport, ModeratorMidpoint, ModeratorOpening
+from app.schemas.agent_outputs import (
+    AgentTextOutput,
+    DisagreementItem,
+    JudgeReport,
+    ModeratorMidpoint,
+    ModeratorOpening,
+    SideAgentOutput,
+)
 from app.schemas.article import ArticleCreate, ArticleListItem, ArticleRead
 from app.schemas.debate import AgentMessageRead, DebateCreate, DebateDetailRead, DebateListItem, DebateRead
 
@@ -88,6 +95,7 @@ def test_article_api_schema_core_fields_are_stable() -> None:
         "id",
         "title",
         "source",
+        "user_question",
         "created_at",
         "debate_count",
         "latest_debate_id",
@@ -99,13 +107,21 @@ def test_article_api_schema_core_fields_are_stable() -> None:
 
 
 def test_debate_api_schema_core_fields_are_stable() -> None:
-    assert _schema_properties(DebateCreate) == {"article_id"}
+    assert _schema_properties(DebateCreate) == {
+        "article_id",
+        "debate_depth",
+        "output_style",
+        "stage_mode",
+    }
     assert _schema_properties(DebateRead) == {
         "id",
         "article_id",
         "status",
         "main_claim",
         "debate_topic",
+        "debate_depth",
+        "output_style",
+        "stage_mode",
         "final_report",
         "winner",
         "credibility_score",
@@ -119,6 +135,9 @@ def test_debate_api_schema_core_fields_are_stable() -> None:
         "article_id",
         "title",
         "status",
+        "debate_depth",
+        "output_style",
+        "stage_mode",
         "winner",
         "credibility_score",
         "created_at",
@@ -141,26 +160,55 @@ def test_agent_output_schema_core_fields_are_stable() -> None:
     assert _schema_properties(AgentTextOutput) == {
         "summary",
         "key_points",
+        "content",
         "evidence",
         "rebuttals",
         "limitations",
     }
+    assert _schema_properties(SideAgentOutput) == {
+        "summary",
+        "key_points",
+        "content",
+        "strongest_claim",
+        "supporting_reasons",
+        "weaknesses",
+        "evidence_assessment",
+    }
+    assert _schema_properties(DisagreementItem) == {
+        "issue",
+        "pro_position",
+        "con_position",
+    }
     assert _schema_properties(ModeratorOpening) == {
+        "summary",
+        "content",
         "main_claim",
         "debate_topic",
+        "debate_focus",
         "key_points",
         "controversial_points",
         "rules",
+        "disagreement_map",
     }
     assert _schema_properties(ModeratorMidpoint) == {
+        "summary",
+        "key_points",
+        "content",
         "pro_summary",
         "con_summary",
+        "debate_focus",
         "key_disagreements",
         "unresolved_questions",
         "focus_for_closing",
+        "disagreement_map",
     }
     assert _schema_properties(JudgeReport) == {
+        "summary",
+        "key_points",
+        "content",
         "main_claim",
+        "verdict",
+        "decision_basis",
         "pro_strongest_points",
         "con_strongest_points",
         "key_disagreements",
@@ -168,7 +216,6 @@ def test_agent_output_schema_core_fields_are_stable() -> None:
         "credibility_score",
         "credible_parts",
         "questionable_parts",
-        "follow_up_questions",
         "final_summary",
     }
 

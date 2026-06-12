@@ -6,19 +6,37 @@ import { useState } from "react";
 
 import { ArticleForm } from "@/components/article-form";
 import { createArticle, createDebate } from "@/lib/api";
-import type { ArticleCreate } from "@/lib/types";
+import type { ArticleDebateFormValues } from "@/lib/types";
 
 export default function NewDebatePage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(values: ArticleCreate) {
+  async function handleSubmit(values: ArticleDebateFormValues) {
     try {
       setSubmitting(true);
       setError(null);
-      const article = await createArticle(values);
-      const debate = await createDebate({ article_id: article.id });
+      const {
+        debate_depth,
+        output_style,
+        title,
+        source,
+        content,
+        user_question,
+      } = values;
+      const article = await createArticle({
+        title,
+        source,
+        content,
+        user_question,
+      });
+      const debate = await createDebate({
+        article_id: article.id,
+        debate_depth,
+        output_style,
+        stage_mode: "article_9",
+      });
       router.push(`/debates/${debate.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "创建辩论失败。");

@@ -33,10 +33,36 @@
 │   ├── tests/            # 单元测试与集成契约测试
 │   └── requirements.txt
 ├── frontend/
-│   ├── app/
-│   ├── components/
+│   ├── app/                          # Next.js App Router 页面
+│   │   ├── page.tsx                  # 产品首页 / 工作台入口
+│   │   ├── articles/
+│   │   │   ├── page.tsx              # 文章库列表、搜索与筛选
+│   │   │   └── [articleId]/page.tsx  # 文章详情与关联辩论入口
+│   │   ├── debates/
+│   │   │   ├── page.tsx              # 最近辩论列表、搜索与筛选
+│   │   │   ├── new/page.tsx          # 新建文章深度辩论
+│   │   │   ├── topic/new/page.tsx    # 新建快速话题辩论
+│   │   │   └── [debateId]/page.tsx   # 辩论详情、可视化与报告导出
+│   │   ├── layout.tsx                # 全局页面布局
+│   │   └── globals.css               # Tailwind 与首页动画样式
+│   ├── components/                   # 可复用前端组件
+│   │   ├── article-form.tsx          # 文章提交表单
+│   │   ├── article-list.tsx          # 文章库列表
+│   │   ├── debate-list.tsx           # 辩论列表表格
+│   │   ├── agent-message-card.tsx    # Agent 输出卡片与字段中文化
+│   │   ├── debate-summary-panel.tsx  # 辩论摘要指标面板
+│   │   ├── debate-view-tabs.tsx      # 辩论详情视图切换
+│   │   ├── disagreement-map.tsx      # 分歧地图可视化
+│   │   ├── judge-report.tsx          # 裁判报告展示
+│   │   └── report-actions.tsx        # Markdown 报告复制/导出
 │   ├── lib/
-│   └── package.json
+│   │   ├── api.ts                    # 前端 API 请求封装
+│   │   ├── report.ts                 # Markdown 报告生成
+│   │   └── types.ts                  # 前端共享类型
+│   ├── package.json                  # 前端脚本与依赖
+│   ├── next.config.js
+│   ├── tailwind.config.ts
+│   └── tsconfig.json
 ├── docs/
 ├── .env.example
 ├── pytest.ini

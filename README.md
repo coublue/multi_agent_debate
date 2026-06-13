@@ -43,39 +43,60 @@ V4 前端视觉参考了 Notion AI 公开页面的设计风格：黑色背景、
 .
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # FastAPI 路由
-│   │   ├── agents/       # Agent 封装与编排
-│   │   ├── models/       # SQLModel 数据表与枚举
-│   │   ├── prompts/      # Agent prompt 模板
-│   │   ├── schemas/      # API 请求/响应模型
-│   │   ├── services/     # 文章和辩论业务服务
-│   │   ├── config.py     # 环境变量与默认配置
-│   │   ├── db.py         # 数据库初始化和轻量迁移
-│   │   ├── llm.py        # LLM 客户端适配
-│   │   └── main.py       # FastAPI 应用入口
-│   ├── tests/            # 单元测试与集成契约测试
-│   └── requirements.txt
+│   │   ├── api/             # FastAPI 路由，包含文章、辩论、话题辩论和健康检查接口
+│   │   ├── agents/          # Agent 封装与编排，负责主持人、正方、反方、裁判流程
+│   │   ├── models/          # SQLModel 数据表与枚举定义
+│   │   ├── prompts/         # Agent prompt 模板，区分文章辩论和话题辩论
+│   │   ├── schemas/         # API 请求/响应模型与 Agent 结构化输出模型
+│   │   ├── services/        # 文章和辩论业务服务，包含创建、删除、重跑等逻辑
+│   │   ├── config.py        # 环境变量与默认配置
+│   │   ├── db.py            # 数据库初始化和轻量迁移
+│   │   ├── llm.py           # DeepSeek OpenAI-compatible LLM 客户端适配
+│   │   └── main.py          # FastAPI 应用入口与 CORS 配置
+│   ├── tests/               # 单元测试与集成契约测试
+│   └── requirements.txt     # 后端 Python 依赖
 ├── frontend/
-│   ├── app/              # Next.js App Router 页面
-│   ├── components/       # 可复用前端组件
-│   ├── lib/              # API client、类型、Markdown 报告生成
-│   ├── package.json
-│   ├── tailwind.config.ts
-│   └── tsconfig.json
+│   ├── app/                 # Next.js App Router 页面
+│   │   ├── page.tsx         # Notion AI 风格产品首页与工作台入口
+│   │   ├── articles/        # 文章库列表与文章详情页面
+│   │   ├── debates/         # 历史辩论、新建辩论、话题辩论和辩论详情页面
+│   │   ├── layout.tsx       # 全局 HTML 布局与 metadata
+│   │   └── globals.css      # Tailwind 基础样式、暗色主题和全局动画
+│   ├── components/          # 可复用前端组件
+│   │   ├── article-form.tsx # 文章提交与文章辩论配置表单
+│   │   ├── article-list.tsx # 文章库列表卡片
+│   │   ├── debate-list.tsx  # 历史辩论列表
+│   │   ├── agent-message-card.tsx    # Agent 输出卡片与字段中文化
+│   │   ├── debate-summary-panel.tsx  # 辩论详情顶部摘要面板
+│   │   ├── debate-stage-progress.tsx # 3/5/9 阶段进度展示
+│   │   ├── disagreement-map.tsx      # 争议点地图
+│   │   ├── judge-report.tsx          # 裁判报告展示
+│   │   └── report-actions.tsx        # Markdown 复制与导出按钮
+│   ├── lib/                 # API client、共享类型、Markdown 报告生成
+│   │   ├── api.ts           # 前端 fetch 封装
+│   │   ├── report.ts        # Markdown 报告生成逻辑
+│   │   └── types.ts         # 前端共享 TypeScript 类型
+│   ├── package.json         # 前端依赖与 npm 脚本
+│   ├── package-lock.json    # 前端依赖锁定文件
+│   ├── postcss.config.js    # PostCSS 配置
+│   ├── tailwind.config.ts   # Tailwind CSS 配置
+│   ├── next.config.js       # Next.js 配置
+│   └── tsconfig.json        # TypeScript 配置
 ├── docs/
-│   ├── api-spec.md
-│   ├── architecture.md
-│   ├── v1-development-plan.md
-│   ├── v1-development-handoff.md
-│   ├── v2-development-plan.md
-│   ├── v2-development-handoff.md
-│   ├── v3-development-plan.md
-│   ├── v3-development-handoff.md
-│   ├── v4-development-plan.md
-│   └── v4-development-handoff.md
-├── .env.example
-├── pytest.ini
-└── README.md
+│   ├── api-spec.md          # 后端 API 契约与请求/响应示例
+│   ├── architecture.md      # 系统架构、模块职责和数据流说明
+│   ├── v1-development-plan.md      # V1 开发计划
+│   ├── v1-development-handoff.md   # V1 交接手册
+│   ├── v2-development-plan.md      # V2 开发计划
+│   ├── v2-development-handoff.md   # V2 交接手册
+│   ├── v3-development-plan.md      # V3 开发计划
+│   ├── v3-development-handoff.md   # V3 交接手册
+│   ├── v4-development-plan.md      # V4 Notion AI 风格前端改造计划
+│   └── v4-development-handoff.md   # V4 交接手册与公开仓库注意事项
+├── .env.example             # 环境变量示例，不包含真实密钥
+├── .gitignore               # Git 忽略规则，排除 .env、数据库、缓存和本地参考图
+├── pytest.ini               # pytest 配置
+└── README.md                # 项目说明文档
 ```
 
 ## 环境变量

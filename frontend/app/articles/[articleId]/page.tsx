@@ -130,39 +130,41 @@ export default function ArticleDetailPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 text-slate-900 sm:px-6 lg:py-9">
-      <nav className="mb-6 flex items-center justify-between gap-4">
-        <Link className="text-sm font-medium text-blue-700 hover:text-blue-900" href="/articles">
-          返回文章库
-        </Link>
-        <Link className="text-sm font-medium text-slate-700 hover:text-slate-950" href="/debates/new">
-          新建辩论
-        </Link>
-      </nav>
+    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:py-9">
+      <div className="mx-auto max-w-6xl">
+        <nav className="mb-6 flex items-center justify-between gap-4">
+          <Link className="text-sm font-medium text-cyan-300 hover:text-cyan-100" href="/articles">
+            返回文章库
+          </Link>
+          <Link className="text-sm font-medium text-slate-300 hover:text-white" href="/debates/new">
+            新建辩论
+          </Link>
+        </nav>
 
-      {loading ? <StateMessage text="正在加载文章详情..." /> : null}
-      {error ? <StateMessage tone="error" text={error} /> : null}
-      {!loading && !error && !article ? <StateMessage text="未找到这篇文章。" /> : null}
+        {loading ? <StateMessage text="正在加载文章详情..." /> : null}
+        {error ? <StateMessage tone="error" text={error} /> : null}
+        {!loading && !error && !article ? <StateMessage text="未找到这篇文章。" /> : null}
 
-      {article ? (
-        <ArticleDetail
-          article={article}
-          creatingDebate={creatingDebate}
-          debates={debates}
-          deletingArticle={deletingArticle}
-          deletingDebateId={deletingDebateId}
-          onCreateDebate={handleCreateDebate}
-          onDeleteArticle={handleDeleteArticle}
-          onDeleteDebate={handleDeleteDebate}
-          onSelectDebate={(debate) => router.push(`/debates/${debate.id}`)}
-        />
-      ) : null}
+        {article ? (
+          <ArticleDetail
+            article={article}
+            creatingDebate={creatingDebate}
+            debates={debates}
+            deletingArticle={deletingArticle}
+            deletingDebateId={deletingDebateId}
+            onCreateDebate={handleCreateDebate}
+            onDeleteArticle={handleDeleteArticle}
+            onDeleteDebate={handleDeleteDebate}
+            onSelectDebate={(debate) => router.push(`/debates/${debate.id}`)}
+          />
+        ) : null}
 
-      {deletingDebateId ? (
-        <div className="mt-4 text-right text-sm text-slate-500">
-          正在删除辩论 #{deletingDebateId}...
-        </div>
-      ) : null}
+        {deletingDebateId ? (
+          <div className="mt-4 text-right text-sm text-slate-500">
+            正在删除辩论 #{deletingDebateId}...
+          </div>
+        ) : null}
+      </div>
     </main>
   );
 }
@@ -176,8 +178,8 @@ function StateMessage({
 }) {
   const toneClass =
     tone === "error"
-      ? "border-red-200 bg-red-50 text-red-700"
-      : "border-slate-200 bg-slate-50 text-slate-600";
+      ? "border-rose-400/30 bg-rose-500/10 text-rose-200"
+      : "border-slate-800 bg-slate-950/70 text-slate-400";
 
   return (
     <div className={`mb-5 rounded-md border px-4 py-5 text-sm leading-6 ${toneClass}`}>

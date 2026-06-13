@@ -23,39 +23,45 @@ const ROLE_STYLES: Record<
     badge: string;
     accent: string;
     button: string;
+    muted: string;
   }
 > = {
   moderator: {
-    card: "border-blue-200 bg-blue-50/70 text-blue-950",
-    badge: "border-blue-200 bg-white/75 text-blue-800",
-    accent: "bg-blue-500",
-    button: "text-blue-800 hover:text-blue-950",
+    card: "border-sky-400/25 bg-sky-400/10 text-sky-50",
+    badge: "border-sky-300/30 bg-sky-300/10 text-sky-100",
+    accent: "bg-sky-400",
+    button: "text-sky-100 hover:bg-sky-300/10 hover:text-white",
+    muted: "text-sky-100/65",
   },
   pro: {
-    card: "border-emerald-200 bg-emerald-50/70 text-emerald-950",
-    badge: "border-emerald-200 bg-white/75 text-emerald-800",
-    accent: "bg-emerald-500",
-    button: "text-emerald-800 hover:text-emerald-950",
+    card: "border-emerald-400/25 bg-emerald-400/10 text-emerald-50",
+    badge: "border-emerald-300/30 bg-emerald-300/10 text-emerald-100",
+    accent: "bg-emerald-400",
+    button: "text-emerald-100 hover:bg-emerald-300/10 hover:text-white",
+    muted: "text-emerald-100/65",
   },
   con: {
-    card: "border-amber-200 bg-amber-50/80 text-amber-950",
-    badge: "border-amber-200 bg-white/75 text-amber-800",
-    accent: "bg-amber-500",
-    button: "text-amber-800 hover:text-amber-950",
+    card: "border-amber-400/25 bg-amber-400/10 text-amber-50",
+    badge: "border-amber-300/30 bg-amber-300/10 text-amber-100",
+    accent: "bg-amber-400",
+    button: "text-amber-100 hover:bg-amber-300/10 hover:text-white",
+    muted: "text-amber-100/65",
   },
   judge: {
-    card: "border-rose-200 bg-rose-50/70 text-rose-950",
-    badge: "border-rose-200 bg-white/75 text-rose-800",
-    accent: "bg-rose-500",
-    button: "text-rose-800 hover:text-rose-950",
+    card: "border-violet-400/30 bg-violet-500/10 text-violet-50",
+    badge: "border-violet-300/30 bg-violet-300/10 text-violet-100",
+    accent: "bg-violet-400",
+    button: "text-violet-100 hover:bg-violet-300/10 hover:text-white",
+    muted: "text-violet-100/65",
   },
 };
 
 const FALLBACK_STYLE = {
-  card: "border-slate-200 bg-white text-slate-950",
-  badge: "border-slate-200 bg-slate-50 text-slate-700",
-  accent: "bg-slate-400",
-  button: "text-slate-700 hover:text-slate-950",
+  card: "border-slate-700 bg-slate-900 text-slate-100",
+  badge: "border-slate-700 bg-slate-800 text-slate-300",
+  accent: "bg-slate-500",
+  button: "text-slate-300 hover:bg-slate-800 hover:text-white",
+  muted: "text-slate-500",
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -179,7 +185,7 @@ function renderContent(value: ContentValue, keyPrefix = "content"): ReactNode {
     }
 
     return (
-      <ul className="list-disc space-y-1 break-words pl-5 text-sm leading-6">
+      <ul className="list-disc space-y-1 break-words pl-5 text-sm leading-6 text-slate-200">
         {value.map((item, index) => (
           <li key={`${keyPrefix}-${index}`}>
             {item && typeof item === "object"
@@ -202,7 +208,7 @@ function renderContent(value: ContentValue, keyPrefix = "content"): ReactNode {
       <div className="space-y-3">
         {entries.map(([key, item]) => (
           <div key={`${keyPrefix}-${key}`}>
-            <div className="mb-1 text-xs font-semibold text-slate-500">
+            <div className="mb-1 text-xs font-semibold text-slate-400">
               {labelize(key)}
             </div>
             {renderContent(item, `${keyPrefix}-${key}`)}
@@ -213,7 +219,9 @@ function renderContent(value: ContentValue, keyPrefix = "content"): ReactNode {
   }
 
   return (
-    <p className="break-words text-sm leading-6">{renderInlineValue(value)}</p>
+    <p className="break-words text-sm leading-6 text-slate-200">
+      {renderInlineValue(value)}
+    </p>
   );
 }
 
@@ -261,7 +269,7 @@ export function AgentMessageCard({
   return (
     <article
       className={[
-        "overflow-hidden rounded-md border shadow-sm",
+        "overflow-hidden rounded-md border shadow-sm shadow-black/20",
         style.card,
       ].join(" ")}
     >
@@ -283,7 +291,7 @@ export function AgentMessageCard({
                   {labelize(String(message.stage))}
                 </span>
               </div>
-              <div className="mt-1 break-words text-xs text-slate-500">
+              <div className={["mt-1 break-words text-xs", style.muted].join(" ")}>
                 {formatAgentName(message.agent_name, role)}
               </div>
             </div>
@@ -291,7 +299,7 @@ export function AgentMessageCard({
             <button
               aria-expanded={!collapsed}
               className={[
-                "min-h-8 rounded-md px-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2",
+                "min-h-8 rounded-md px-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-slate-950",
                 style.button,
               ].join(" ")}
               onClick={() => setCollapsed((value) => !value)}
@@ -302,11 +310,11 @@ export function AgentMessageCard({
           </div>
 
           {collapsed ? (
-            <p className="line-clamp-2 break-words text-sm leading-6 text-slate-600">
+            <p className="line-clamp-2 break-words text-sm leading-6 text-slate-300">
               {summary}
             </p>
           ) : (
-            <div className="min-w-0 text-slate-900">
+            <div className="min-w-0 text-slate-100">
               {renderContent(message.content as ContentValue)}
             </div>
           )}

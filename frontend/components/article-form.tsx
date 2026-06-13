@@ -13,9 +13,9 @@ const DEBATE_DEPTH_OPTIONS: Array<{
   label: string;
   description: string;
 }> = [
-  { value: "quick", label: "快速", description: "更短的分析路径，适合快速判断。" },
+  { value: "quick", label: "快速", description: "缩短分析路径，适合先做快速判断。" },
   { value: "standard", label: "标准", description: "默认 9 阶段文章辩论节奏。" },
-  { value: "deep", label: "深度", description: "更充分展开论证和反驳。" },
+  { value: "deep", label: "深度", description: "更充分展开论证、交锋和反驳。" },
 ];
 
 const OUTPUT_STYLE_OPTIONS: Array<{
@@ -33,6 +33,12 @@ type ArticleFormProps = {
   error?: string | null;
   initialValue?: Partial<ArticleDebateFormValues>;
 };
+
+const inputClass =
+  "w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 disabled:bg-zinc-900 disabled:text-zinc-500";
+
+const optionClass =
+  "flex cursor-pointer gap-3 rounded-md border border-zinc-800 bg-zinc-950/80 p-3 text-sm transition hover:border-zinc-700 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-500/10";
 
 export function ArticleForm({
   onSubmit,
@@ -77,66 +83,73 @@ export function ArticleForm({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="space-y-1.5">
-          <span className="text-sm font-medium text-slate-800">文章标题</span>
-          <input
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:text-slate-500"
+      <div className="rounded-md border border-zinc-800 bg-zinc-950/80 p-4">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md border border-violet-400/30 bg-violet-500/10 text-xs font-black text-violet-300">
+            AI
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold text-white">文章输入</h2>
+            <p className="text-xs text-zinc-500">粘贴文章，并指定你希望 Agent 重点判断的问题。</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="space-y-1.5">
+            <span className="text-sm font-medium text-zinc-200">文章标题</span>
+            <input
+              className={inputClass}
+              disabled={isDisabled}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="输入需要分析或讨论的文章标题"
+              value={title}
+            />
+          </label>
+
+          <label className="space-y-1.5">
+            <span className="text-sm font-medium text-zinc-200">来源</span>
+            <input
+              className={inputClass}
+              disabled={isDisabled}
+              onChange={(event) => setSource(event.target.value)}
+              placeholder="链接、媒体名称或备注，可选"
+              value={source}
+            />
+          </label>
+        </div>
+
+        <label className="mt-4 block space-y-1.5">
+          <span className="text-sm font-medium text-zinc-200">文章正文</span>
+          <textarea
+            className={`${inputClass} min-h-64 resize-y leading-6`}
             disabled={isDisabled}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="输入需要核查或讨论的文章标题"
-            value={title}
+            onChange={(event) => setContent(event.target.value)}
+            placeholder="粘贴完整文章内容，长文会在结果页保留换行展示"
+            value={content}
           />
         </label>
 
-        <label className="space-y-1.5">
-          <span className="text-sm font-medium text-slate-800">来源</span>
-          <input
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:text-slate-500"
+        <label className="mt-4 block space-y-1.5">
+          <span className="text-sm font-medium text-zinc-200">关注问题</span>
+          <textarea
+            className={`${inputClass} min-h-24 resize-y leading-6`}
             disabled={isDisabled}
-            onChange={(event) => setSource(event.target.value)}
-            placeholder="链接、媒体名称或备注，可选"
-            value={source}
+            onChange={(event) => setUserQuestion(event.target.value)}
+            placeholder="希望辩论特别关注的问题，可选"
+            value={userQuestion}
           />
         </label>
       </div>
 
-      <label className="space-y-1.5">
-        <span className="text-sm font-medium text-slate-800">文章正文</span>
-        <textarea
-          className="min-h-64 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:text-slate-500"
-          disabled={isDisabled}
-          onChange={(event) => setContent(event.target.value)}
-          placeholder="粘贴完整文章内容，长文会在结果页保留换行展示"
-          value={content}
-        />
-      </label>
-
-      <label className="space-y-1.5">
-        <span className="text-sm font-medium text-slate-800">
-          关注问题
-        </span>
-        <textarea
-          className="min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:text-slate-500"
-          disabled={isDisabled}
-          onChange={(event) => setUserQuestion(event.target.value)}
-          placeholder="希望辩论特别关注的问题，可选"
-          value={userQuestion}
-        />
-      </label>
-
       <div className="grid gap-4 md:grid-cols-2">
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-slate-800">辩论深度</legend>
+          <legend className="text-sm font-medium text-zinc-200">辩论深度</legend>
           <div className="grid gap-2">
             {DEBATE_DEPTH_OPTIONS.map((option) => (
-              <label
-                className="flex cursor-pointer gap-3 rounded-md border border-slate-200 bg-white p-3 text-sm transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
-                key={option.value}
-              >
+              <label className={optionClass} key={option.value}>
                 <input
                   checked={debateDepth === option.value}
-                  className="mt-1 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="mt-1 h-4 w-4 border-zinc-600 bg-zinc-950 text-violet-500 focus:ring-blue-500"
                   disabled={isDisabled}
                   name="article-debate-depth"
                   onChange={() => setDebateDepth(option.value)}
@@ -144,8 +157,8 @@ export function ArticleForm({
                   value={option.value}
                 />
                 <span>
-                  <span className="block font-medium text-slate-900">{option.label}</span>
-                  <span className="mt-1 block leading-6 text-slate-500">
+                  <span className="block font-medium text-zinc-100">{option.label}</span>
+                  <span className="mt-1 block leading-6 text-zinc-500">
                     {option.description}
                   </span>
                 </span>
@@ -155,16 +168,13 @@ export function ArticleForm({
         </fieldset>
 
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-slate-800">输出风格</legend>
+          <legend className="text-sm font-medium text-zinc-200">输出风格</legend>
           <div className="grid gap-2">
             {OUTPUT_STYLE_OPTIONS.map((option) => (
-              <label
-                className="flex cursor-pointer gap-3 rounded-md border border-slate-200 bg-white p-3 text-sm transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
-                key={option.value}
-              >
+              <label className={optionClass} key={option.value}>
                 <input
                   checked={outputStyle === option.value}
-                  className="mt-1 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="mt-1 h-4 w-4 border-zinc-600 bg-zinc-950 text-violet-500 focus:ring-blue-500"
                   disabled={isDisabled}
                   name="article-output-style"
                   onChange={() => setOutputStyle(option.value)}
@@ -172,8 +182,8 @@ export function ArticleForm({
                   value={option.value}
                 />
                 <span>
-                  <span className="block font-medium text-slate-900">{option.label}</span>
-                  <span className="mt-1 block leading-6 text-slate-500">
+                  <span className="block font-medium text-zinc-100">{option.label}</span>
+                  <span className="mt-1 block leading-6 text-zinc-500">
                     {option.description}
                   </span>
                 </span>
@@ -184,21 +194,23 @@ export function ArticleForm({
       </div>
 
       {(localError || error) && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm leading-6 text-red-700">
+        <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm leading-6 text-red-200">
           {localError || error}
         </div>
       )}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
         {loading && (
-          <span className="text-sm text-slate-500">正在提交文章并启动辩论...</span>
+          <span className="text-sm text-zinc-500">
+            正在提交文章并启动辩论...
+          </span>
         )}
         <button
-          className="inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="inline-flex h-10 items-center justify-center rounded-md bg-violet-600 px-4 text-sm font-medium text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
           disabled={isDisabled}
           type="submit"
         >
-          {loading ? "提交中" : "开始辩论"}
+          {loading ? "提交中..." : "开始辩论"}
         </button>
       </div>
     </form>

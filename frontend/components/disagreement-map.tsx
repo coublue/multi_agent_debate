@@ -14,22 +14,22 @@ export function DisagreementMap({ messages }: DisagreementMapProps) {
   const items = getDisagreementItems(messages);
 
   return (
-    <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-md border border-slate-800 bg-slate-950/80 p-4 shadow-sm shadow-black/20 sm:p-5">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-950">争议点矩阵</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-slate-100">争议点矩阵</h2>
+        <p className="mt-1 text-sm text-slate-400">
           来自主持人输出的结构化分歧整理。
         </p>
       </div>
 
       {items.length > 0 ? (
-        <div className="overflow-hidden rounded-md border border-slate-200">
-          <div className="hidden grid-cols-[1fr_1fr_1fr] bg-slate-50 text-xs font-semibold text-slate-500 md:grid">
-            <div className="border-r border-slate-200 px-3 py-2">争议点</div>
-            <div className="border-r border-slate-200 px-3 py-2">正方立场</div>
+        <div className="overflow-hidden rounded-md border border-slate-800">
+          <div className="hidden grid-cols-[1fr_1fr_1fr] bg-slate-900 text-xs font-semibold text-slate-400 md:grid">
+            <div className="border-r border-slate-800 px-3 py-2">争议点</div>
+            <div className="border-r border-slate-800 px-3 py-2">正方立场</div>
             <div className="px-3 py-2">反方立场</div>
           </div>
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-slate-800">
             {items.map((item, index) => (
               <article
                 className="grid gap-0 md:grid-cols-[1fr_1fr_1fr]"
@@ -43,7 +43,7 @@ export function DisagreementMap({ messages }: DisagreementMapProps) {
           </div>
         </div>
       ) : (
-        <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+        <div className="rounded-md border border-dashed border-slate-700 bg-slate-900/70 px-4 py-8 text-center text-sm text-slate-400">
           暂无结构化摘要。新版本主持人输出包含 disagreement_map 后会在这里展示。
         </div>
       )}
@@ -62,16 +62,16 @@ function MatrixCell({
 }) {
   const toneClass =
     tone === "pro"
-      ? "bg-emerald-50/70 text-emerald-950"
+      ? "bg-emerald-500/10 text-emerald-50"
       : tone === "con"
-        ? "bg-amber-50/70 text-amber-950"
-        : "bg-white text-slate-900";
+        ? "bg-amber-500/10 text-amber-50"
+        : "bg-slate-950 text-slate-100";
 
   return (
     <div
-      className={`min-w-0 border-b border-slate-100 px-3 py-3 md:border-b-0 md:border-r md:border-slate-200 md:last:border-r-0 ${toneClass}`}
+      className={`min-w-0 border-b border-slate-800 px-3 py-3 md:border-b-0 md:border-r md:last:border-r-0 ${toneClass}`}
     >
-      <div className="mb-1 text-xs font-semibold text-slate-500 md:hidden">
+      <div className="mb-1 text-xs font-semibold text-slate-400 md:hidden">
         {label}
       </div>
       <p className="break-words text-sm leading-6">{value}</p>

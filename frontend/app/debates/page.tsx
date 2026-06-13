@@ -129,62 +129,64 @@ export default function DebatesPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 text-slate-900 sm:px-6 lg:py-10">
-      <nav className="mb-6 flex items-center justify-between gap-4">
-        <Link className="text-sm font-medium text-blue-700 hover:text-blue-900" href="/">
-          返回首页
-        </Link>
-        <Link className="text-sm font-medium text-slate-700 hover:text-slate-950" href="/debates/new">
-          新建辩论
-        </Link>
-      </nav>
+    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:py-10">
+      <div className="mx-auto max-w-6xl">
+        <nav className="mb-6 flex items-center justify-between gap-4">
+          <Link className="text-sm font-medium text-cyan-300 hover:text-cyan-100" href="/">
+            返回首页
+          </Link>
+          <Link className="text-sm font-medium text-slate-300 hover:text-white" href="/debates/new">
+            新建辩论
+          </Link>
+        </nav>
 
-      <section className="mb-8 flex flex-col gap-4 border-b border-slate-200 pb-7 md:flex-row md:items-end md:justify-between">
-        <div className="min-w-0">
-          <p className="mb-2 text-sm font-medium text-slate-500">Debate Workspace</p>
-          <h1 className="text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">
-            最近辩论
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-            查看所有辩论记录，按标题、文章编号、状态或结论搜索，并快速进入详情页。
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-          <span>{debates.length} 场</span>
-          <span className="text-slate-300">/</span>
-          <span>{completedCount} 已完成</span>
-          <span className="text-slate-300">/</span>
-          <span>{runningCount} 进行中</span>
-          <span className="text-slate-300">/</span>
-          <span>{failedCount} 失败</span>
-        </div>
-      </section>
-
-      <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        {loading ? <StateMessage text="正在加载辩论列表..." /> : null}
-        {error ? <StateMessage tone="error" text={error} /> : null}
-        {!loading && !error ? (
-          <div className="space-y-4">
-            <DebateLibraryControls
-              resultCount={filteredDebates.length}
-              searchTerm={searchTerm}
-              sortKey={sortKey}
-              statusFilter={statusFilter}
-              totalCount={debates.length}
-              onSearchTermChange={setSearchTerm}
-              onSortKeyChange={setSortKey}
-              onStatusFilterChange={setStatusFilter}
-            />
-            <DebateList
-              debates={filteredDebates}
-              deletingDebateId={deletingDebateId}
-              emptyMessage="没有符合当前筛选条件的辩论。"
-              onDeleteDebate={handleDeleteDebate}
-              onSelectDebate={(debate) => router.push(`/debates/${debate.id}`)}
-            />
+        <section className="mb-8 flex flex-col gap-4 border-b border-slate-800 pb-7 md:flex-row md:items-end md:justify-between">
+          <div className="min-w-0">
+            <p className="mb-2 text-sm font-medium text-cyan-300">Debate Workspace</p>
+            <h1 className="text-2xl font-semibold tracking-normal text-white sm:text-3xl">
+              最近辩论
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
+              查看所有辩论记录，按标题、文章编号、状态或结论搜索，并快速进入详情页。
+            </p>
           </div>
-        ) : null}
-      </section>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+            <span>{debates.length} 场</span>
+            <span className="text-slate-700">/</span>
+            <span>{completedCount} 已完成</span>
+            <span className="text-slate-700">/</span>
+            <span>{runningCount} 进行中</span>
+            <span className="text-slate-700">/</span>
+            <span>{failedCount} 失败</span>
+          </div>
+        </section>
+
+        <section className="rounded-md border border-slate-800 bg-slate-900/60 p-4 shadow-sm shadow-black/20 sm:p-5">
+          {loading ? <StateMessage text="正在加载辩论列表..." /> : null}
+          {error ? <StateMessage tone="error" text={error} /> : null}
+          {!loading && !error ? (
+            <div className="space-y-4">
+              <DebateLibraryControls
+                resultCount={filteredDebates.length}
+                searchTerm={searchTerm}
+                sortKey={sortKey}
+                statusFilter={statusFilter}
+                totalCount={debates.length}
+                onSearchTermChange={setSearchTerm}
+                onSortKeyChange={setSortKey}
+                onStatusFilterChange={setStatusFilter}
+              />
+              <DebateList
+                debates={filteredDebates}
+                deletingDebateId={deletingDebateId}
+                emptyMessage="没有符合当前筛选条件的辩论。"
+                onDeleteDebate={handleDeleteDebate}
+                onSelectDebate={(debate) => router.push(`/debates/${debate.id}`)}
+              />
+            </div>
+          ) : null}
+        </section>
+      </div>
     </main>
   );
 }
@@ -217,8 +219,8 @@ function DebateLibraryControls({
             <button
               className={`inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition ${
                 isActive
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                  ? "border-cyan-400/40 bg-cyan-400/15 text-cyan-100"
+                  : "border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-600 hover:bg-slate-900"
               }`}
               key={filter.value}
               onClick={() => onStatusFilterChange(filter.value)}
@@ -232,9 +234,11 @@ function DebateLibraryControls({
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
         <label className="space-y-1.5">
-          <span className="text-xs font-medium text-slate-500">搜索标题、文章编号、状态或结论</span>
+          <span className="text-xs font-medium text-slate-400">
+            搜索标题、文章编号、状态或结论
+          </span>
           <input
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className="h-10 w-full rounded-md border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/10"
             onChange={(event) => onSearchTermChange(event.target.value)}
             placeholder="输入关键词"
             value={searchTerm}
@@ -242,9 +246,9 @@ function DebateLibraryControls({
         </label>
 
         <label className="space-y-1.5">
-          <span className="text-xs font-medium text-slate-500">排序</span>
+          <span className="text-xs font-medium text-slate-400">排序</span>
           <select
-            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className="h-10 w-full rounded-md border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/10"
             onChange={(event) => onSortKeyChange(event.target.value as DebateSortKey)}
             value={sortKey}
           >
@@ -303,12 +307,8 @@ function StateMessage({
 }) {
   const toneClass =
     tone === "error"
-      ? "border-red-200 bg-red-50 text-red-700"
-      : "border-slate-200 bg-slate-50 text-slate-600";
+      ? "border-rose-400/30 bg-rose-500/10 text-rose-200"
+      : "border-slate-800 bg-slate-950/70 text-slate-400";
 
-  return (
-    <div className={`rounded-md border px-4 py-5 text-sm leading-6 ${toneClass}`}>
-      {text}
-    </div>
-  );
+  return <div className={`rounded-md border px-4 py-5 text-sm leading-6 ${toneClass}`}>{text}</div>;
 }

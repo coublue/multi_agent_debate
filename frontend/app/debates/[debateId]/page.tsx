@@ -132,133 +132,135 @@ export default function DebateDetailPage() {
     0;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 text-slate-900 sm:px-6 lg:py-9">
-      <nav className="mb-6 flex items-center justify-between gap-4">
-        <Link className="text-sm font-medium text-blue-700 hover:text-blue-900" href="/">
-          返回首页
-        </Link>
-        <div className="flex items-center gap-3">
-          {debate ? (
-            <button
-              className="text-sm font-medium text-red-700 transition hover:text-red-900 disabled:cursor-not-allowed disabled:text-slate-400"
-              disabled={deleting}
-              onClick={handleDeleteDebate}
-              type="button"
-            >
-              {deleting ? "删除中" : "删除辩论"}
-            </button>
-          ) : null}
-          <Link className="text-sm font-medium text-slate-700 hover:text-slate-950" href="/debates/new">
-            新建辩论
+    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:py-9">
+      <div className="mx-auto max-w-6xl">
+        <nav className="mb-6 flex items-center justify-between gap-4">
+          <Link className="text-sm font-medium text-violet-200 hover:text-white" href="/">
+            返回首页
           </Link>
-        </div>
-      </nav>
+          <div className="flex items-center gap-3">
+            {debate ? (
+              <button
+                className="text-sm font-medium text-rose-300 transition hover:text-rose-100 disabled:cursor-not-allowed disabled:text-slate-600"
+                disabled={deleting}
+                onClick={handleDeleteDebate}
+                type="button"
+              >
+                {deleting ? "删除中..." : "删除辩论"}
+              </button>
+            ) : null}
+            <Link className="text-sm font-medium text-slate-300 hover:text-white" href="/debates/new">
+              新建辩论
+            </Link>
+          </div>
+        </nav>
 
-      {loading ? <StateMessage text="正在加载辩论详情..." /> : null}
-      {error ? <StateMessage tone="error" text={error} /> : null}
-      {!loading && !error && !debate ? (
-        <StateMessage text="未找到这场辩论。" />
-      ) : null}
+        {loading ? <StateMessage text="正在加载辩论详情..." /> : null}
+        {error ? <StateMessage tone="error" text={error} /> : null}
+        {!loading && !error && !debate ? (
+          <StateMessage text="未找到这场辩论。" />
+        ) : null}
 
-      {debate ? (
-        <>
-          <DebateSummaryPanel
-            debate={debate}
-            isTopicDebate={Boolean(isTopicDebate)}
-            onRerun={handleRerunDebate}
-            rerunning={rerunning}
-            stageOrder={stageOrder}
-            visibleMessageCount={visibleMessageCount}
-          />
+        {debate ? (
+          <>
+            <DebateSummaryPanel
+              debate={debate}
+              isTopicDebate={Boolean(isTopicDebate)}
+              onRerun={handleRerunDebate}
+              rerunning={rerunning}
+              stageOrder={stageOrder}
+              visibleMessageCount={visibleMessageCount}
+            />
 
-          <section className="mb-5 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-semibold text-slate-950">
-                  Markdown 报告
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  导出当前辩论的结论、关键观点、分歧和阶段记录。
-                </p>
-              </div>
-              <ReportActions debate={debate} />
-            </div>
-          </section>
-
-          <DebateViewTabs onChange={setActiveView} value={activeView} />
-
-          {activeView === "overview" ? (
-            <div className="space-y-5">
-              <section className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
-                <article className="min-w-0 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                  <h2 className="mb-4 text-lg font-semibold text-slate-950">
-                    {isTopicDebate ? "话题背景" : "文章"}
+            <section className="mb-5 rounded-md border border-slate-800 bg-slate-950/80 p-4 shadow-sm shadow-black/20 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-100">
+                    Markdown 报告
                   </h2>
-                  {!isTopicDebate && debate.article.source ? (
-                    <p className="mb-2 break-words text-sm text-slate-600">
-                      来源：{debate.article.source}
-                    </p>
-                  ) : null}
-                  {debate.article.user_question ? (
-                    <p className="mb-4 break-words border-l-4 border-blue-500 pl-3 text-sm leading-6 text-slate-700">
-                      关注问题：{debate.article.user_question}
-                    </p>
-                  ) : null}
-                  <p className="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words pr-1 text-sm leading-7 text-slate-700">
-                    {debate.article.content}
+                  <p className="mt-1 text-sm text-slate-400">
+                    导出当前辩论的结论、关键观点、分歧和阶段记录。
                   </p>
-                </article>
-
-                <aside className="min-w-0 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                  <h2 className="mb-4 text-lg font-semibold text-slate-950">
-                    辩论概要
-                  </h2>
-                  <KeyValue label="核心主张" value={debate.main_claim} />
-                  <KeyValue label="辩题" value={debate.debate_topic} />
-                  <KeyValue label="辩论深度" value={formatDebateDepth(debate.debate_depth)} />
-                  <KeyValue label="输出风格" value={formatOutputStyle(debate.output_style)} />
-                  <KeyValue label="阶段模式" value={formatStageMode(debate.stage_mode, isTopicDebate)} />
-                  <KeyValue label="创建时间" value={formatDate(debate.created_at)} />
-                  <KeyValue label="更新时间" value={formatDate(debate.updated_at)} />
-                </aside>
-              </section>
-
-              <DisagreementMap messages={debate.messages} />
-            </div>
-          ) : null}
-
-          {activeView === "process" ? (
-            <div className="space-y-5">
-              <DebateStageProgress
-                messages={debate.messages}
-                mode={debateMode}
-                status={debate.status}
-              />
-
-              <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold text-slate-950">
-                    {stageOrder.length} 阶段消息
-                  </h2>
-                  <span className="text-sm text-slate-500">
-                    {visibleMessageCount} 条输出
-                  </span>
                 </div>
-                <DebateStage messages={debate.messages} mode={debateMode} />
-              </section>
-            </div>
-          ) : null}
-
-          {activeView === "report" ? (
-            <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="mb-4 text-lg font-semibold text-slate-950">
-                最终裁判报告
-              </h2>
-              <JudgeReport report={debate.final_report} />
+                <ReportActions debate={debate} />
+              </div>
             </section>
-          ) : null}
-        </>
-      ) : null}
+
+            <DebateViewTabs onChange={setActiveView} value={activeView} />
+
+            {activeView === "overview" ? (
+              <div className="space-y-5">
+                <section className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+                  <article className="min-w-0 rounded-md border border-slate-800 bg-slate-950/80 p-4 shadow-sm shadow-black/20 sm:p-5">
+                    <h2 className="mb-4 text-lg font-semibold text-slate-100">
+                      {isTopicDebate ? "话题背景" : "文章"}
+                    </h2>
+                    {!isTopicDebate && debate.article.source ? (
+                      <p className="mb-2 break-words text-sm text-slate-400">
+                        来源：{debate.article.source}
+                      </p>
+                    ) : null}
+                    {debate.article.user_question ? (
+                      <p className="mb-4 break-words border-l-4 border-violet-400 pl-3 text-sm leading-6 text-slate-300">
+                        关注问题：{debate.article.user_question}
+                      </p>
+                    ) : null}
+                    <p className="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words pr-1 text-sm leading-7 text-slate-300">
+                      {debate.article.content}
+                    </p>
+                  </article>
+
+                  <aside className="min-w-0 rounded-md border border-slate-800 bg-slate-950/80 p-4 shadow-sm shadow-black/20 sm:p-5">
+                    <h2 className="mb-4 text-lg font-semibold text-slate-100">
+                      辩论概要
+                    </h2>
+                    <KeyValue label="核心主张" value={debate.main_claim} />
+                    <KeyValue label="辩题" value={debate.debate_topic} />
+                    <KeyValue label="辩论深度" value={formatDebateDepth(debate.debate_depth)} />
+                    <KeyValue label="输出风格" value={formatOutputStyle(debate.output_style)} />
+                    <KeyValue label="阶段模式" value={formatStageMode(debate.stage_mode, isTopicDebate)} />
+                    <KeyValue label="创建时间" value={formatDate(debate.created_at)} />
+                    <KeyValue label="更新时间" value={formatDate(debate.updated_at)} />
+                  </aside>
+                </section>
+
+                <DisagreementMap messages={debate.messages} />
+              </div>
+            ) : null}
+
+            {activeView === "process" ? (
+              <div className="space-y-5">
+                <DebateStageProgress
+                  messages={debate.messages}
+                  mode={debateMode}
+                  status={debate.status}
+                />
+
+                <section className="rounded-md border border-slate-800 bg-slate-950/80 p-4 shadow-sm shadow-black/20 sm:p-5">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-slate-100">
+                      {stageOrder.length} 阶段消息
+                    </h2>
+                    <span className="text-sm text-slate-400">
+                      {visibleMessageCount} 条输出
+                    </span>
+                  </div>
+                  <DebateStage messages={debate.messages} mode={debateMode} />
+                </section>
+              </div>
+            ) : null}
+
+            {activeView === "report" ? (
+              <section className="rounded-md border border-slate-800 bg-slate-950/80 p-4 shadow-sm shadow-black/20 sm:p-5">
+                <h2 className="mb-4 text-lg font-semibold text-slate-100">
+                  最终裁判报告
+                </h2>
+                <JudgeReport report={debate.final_report} />
+              </section>
+            ) : null}
+          </>
+        ) : null}
+      </div>
     </main>
   );
 }
@@ -273,7 +275,7 @@ function KeyValue({
   return (
     <div className="mb-4 last:mb-0">
       <span className="mb-1 block text-xs font-medium text-slate-500">{label}</span>
-      <p className="break-words text-sm leading-6 text-slate-800">
+      <p className="break-words text-sm leading-6 text-slate-200">
         {value || "暂无"}
       </p>
     </div>
@@ -289,8 +291,8 @@ function StateMessage({
 }) {
   const toneClass =
     tone === "error"
-      ? "border-red-200 bg-red-50 text-red-700"
-      : "border-slate-200 bg-slate-50 text-slate-600";
+      ? "border-rose-400/35 bg-rose-500/10 text-rose-100"
+      : "border-slate-800 bg-slate-950/80 text-slate-300";
 
   return (
     <div className={`mb-5 rounded-md border px-4 py-5 text-sm leading-6 ${toneClass}`}>

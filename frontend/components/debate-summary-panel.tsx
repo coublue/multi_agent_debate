@@ -54,22 +54,22 @@ export function DebateSummaryPanel({
   const conStrongest = getStrongestClaim(debate, "con");
 
   return (
-    <section className="mb-5 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="mb-5 rounded-md border border-slate-800 bg-slate-950/90 p-4 shadow-sm shadow-black/30 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="mb-2 text-sm font-medium text-slate-500">
+          <p className="mb-2 text-sm font-medium text-slate-400">
             辩论 #{debate.id}
           </p>
           <div className="flex flex-wrap items-start gap-3">
-            <h1 className="max-w-4xl break-words text-2xl font-semibold text-slate-950 sm:text-3xl">
+            <h1 className="max-w-4xl break-words text-2xl font-semibold text-slate-50 sm:text-3xl">
               {debate.article.title}
             </h1>
             <span
               className={[
                 "mt-1 rounded-full border px-2.5 py-1 text-xs font-semibold",
                 isTopicDebate
-                  ? "border-violet-200 bg-violet-50 text-violet-700"
-                  : "border-sky-200 bg-sky-50 text-sky-700",
+                  ? "border-violet-300/40 bg-violet-500/15 text-violet-100"
+                  : "border-sky-300/35 bg-sky-500/10 text-sky-100",
               ].join(" ")}
             >
               {isTopicDebate ? "话题辩论" : "文章辩论"}
@@ -98,11 +98,11 @@ export function DebateSummaryPanel({
         />
       </div>
 
-      <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
         <div
           className={[
             "h-full rounded-full transition-all",
-            debate.status === "failed" ? "bg-red-500" : "bg-blue-600",
+            debate.status === "failed" ? "bg-rose-500" : "bg-violet-500",
           ].join(" ")}
           style={{ width: `${progressPercent}%` }}
         />
@@ -114,16 +114,16 @@ export function DebateSummaryPanel({
       </div>
 
       {currentStage ? (
-        <p className="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+        <p className="mt-4 rounded-md border border-violet-400/25 bg-violet-500/10 px-3 py-2 text-sm text-violet-100">
           当前阶段：{STAGE_LABELS[currentStage]}
         </p>
       ) : null}
 
       {debate.status === "failed" ? (
-        <div className="mt-5 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div className="mt-5 rounded-md border border-rose-400/35 bg-rose-500/10 p-4 text-sm text-rose-100">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-base font-semibold text-red-950">
+              <h2 className="text-base font-semibold text-rose-50">
                 辩论运行失败
               </h2>
               <p className="mt-1 break-words leading-6">
@@ -133,7 +133,7 @@ export function DebateSummaryPanel({
             </div>
             {onRerun ? (
               <button
-                className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-red-300"
+                className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:bg-rose-900 disabled:text-rose-200"
                 disabled={rerunning}
                 onClick={onRerun}
                 type="button"
@@ -158,9 +158,9 @@ function Metric({
   value: string;
 }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-      <div className="text-xs font-semibold text-slate-500">{label}</div>
-      <div className="mt-1 break-words text-lg font-semibold text-slate-950">
+    <div className="rounded-md border border-slate-800 bg-slate-900/80 p-3">
+      <div className="text-xs font-semibold text-slate-400">{label}</div>
+      <div className="mt-1 break-words text-lg font-semibold text-slate-50">
         {value}
       </div>
       {detail ? (
@@ -183,13 +183,13 @@ function ClaimBlock({
 }) {
   const styles =
     tone === "pro"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-950"
-      : "border-amber-200 bg-amber-50 text-amber-950";
+      ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-50"
+      : "border-amber-400/25 bg-amber-500/10 text-amber-50";
 
   return (
     <section className={`rounded-md border p-4 ${styles}`}>
       <h2 className="mb-2 text-sm font-semibold">{label}</h2>
-      <p className="break-words text-sm leading-6">
+      <p className="break-words text-sm leading-6 text-current/80">
         {value || "暂无结构化摘要。"}
       </p>
     </section>

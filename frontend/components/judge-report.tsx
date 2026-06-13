@@ -33,9 +33,9 @@ function SectionList({
 }) {
   return (
     <section>
-      <h3 className="mb-2 text-sm font-semibold text-slate-900">{title}</h3>
+      <h3 className="mb-2 text-sm font-semibold text-slate-100">{title}</h3>
       {items && items.length > 0 ? (
-        <ul className="list-disc space-y-1 break-words pl-5 text-sm leading-6 text-slate-700">
+        <ul className="list-disc space-y-1 break-words pl-5 text-sm leading-6 text-slate-300">
           {items.map((item, index) => (
             <li key={`${title}-${index}`}>{item}</li>
           ))}
@@ -50,36 +50,36 @@ function SectionList({
 export function JudgeReport({ report }: JudgeReportProps) {
   if (!report) {
     return (
-      <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+      <div className="rounded-md border border-dashed border-slate-700 bg-slate-900/70 px-4 py-8 text-center text-sm text-slate-400">
         裁判报告尚未生成，辩论完成后会显示最终判断。
       </div>
     );
   }
 
   return (
-    <article className="rounded-md border border-slate-200 bg-white p-5">
+    <article className="rounded-md border border-slate-800 bg-slate-950 p-5">
       <div className="mb-5 grid gap-3 md:grid-cols-3">
-        <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div className="rounded-md border border-slate-800 bg-slate-900/80 p-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             结论方
           </div>
-          <div className="mt-1 text-lg font-semibold text-slate-950">
+          <div className="mt-1 text-lg font-semibold text-slate-50">
             {formatWinner(report.winner)}
           </div>
         </div>
-        <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div className="rounded-md border border-slate-800 bg-slate-900/80 p-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             可信度
           </div>
-          <div className="mt-1 text-lg font-semibold text-slate-950">
+          <div className="mt-1 text-lg font-semibold text-violet-100">
             {report.credibility_score}/100
           </div>
         </div>
-        <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div className="rounded-md border border-slate-800 bg-slate-900/80 p-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             核心主张
           </div>
-          <div className="mt-1 max-h-16 overflow-hidden break-words text-sm font-medium leading-5 text-slate-900">
+          <div className="mt-1 max-h-16 overflow-hidden break-words text-sm font-medium leading-5 text-slate-100">
             {report.main_claim}
           </div>
         </div>
@@ -109,11 +109,11 @@ export function JudgeReport({ report }: JudgeReportProps) {
         />
       </div>
 
-      <section className="mt-5 border-t border-slate-200 pt-5">
-        <h3 className="mb-2 text-sm font-semibold text-slate-900">
+      <section className="mt-5 border-t border-slate-800 pt-5">
+        <h3 className="mb-2 text-sm font-semibold text-slate-100">
           最终总结
         </h3>
-        <p className="break-words text-sm leading-6 text-slate-700">
+        <p className="break-words text-sm leading-6 text-slate-300">
           {report.final_summary}
         </p>
       </section>

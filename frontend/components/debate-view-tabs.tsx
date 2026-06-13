@@ -15,7 +15,7 @@ const TABS: { label: string; value: DebateViewMode }[] = [
 
 export function DebateViewTabs({ value, onChange }: DebateViewTabsProps) {
   return (
-    <div className="mb-5 flex flex-wrap gap-2 rounded-md border border-slate-200 bg-white p-1 shadow-sm">
+    <div className="mb-5 flex flex-wrap gap-2 rounded-md border border-slate-800 bg-slate-950 p-1 shadow-sm shadow-black/20">
       {TABS.map((tab) => {
         const active = tab.value === value;
 
@@ -23,10 +23,10 @@ export function DebateViewTabs({ value, onChange }: DebateViewTabsProps) {
           <button
             aria-pressed={active}
             className={[
-              "min-h-9 rounded px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+              "min-h-9 rounded px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-slate-950",
               active
-                ? "bg-slate-950 text-white"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
+                ? "bg-violet-500 text-white shadow-sm shadow-violet-950/30"
+                : "text-slate-400 hover:bg-slate-900 hover:text-slate-100",
             ].join(" ")}
             key={tab.value}
             onClick={() => onChange(tab.value)}

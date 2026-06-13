@@ -22,10 +22,10 @@ const FILTER_OPTIONS: Array<{
 export function AgentFilter({ value, onChange, counts }: AgentFilterProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm font-medium text-slate-600">筛选发言</span>
+      <span className="text-sm font-medium text-slate-300">筛选发言</span>
       <div
         aria-label="Agent 发言筛选"
-        className="flex flex-wrap gap-1 rounded-md border border-slate-200 bg-slate-50 p-1"
+        className="flex flex-wrap gap-1 rounded-md border border-slate-800 bg-slate-950 p-1"
         role="group"
       >
         {FILTER_OPTIONS.map((option) => {
@@ -36,10 +36,10 @@ export function AgentFilter({ value, onChange, counts }: AgentFilterProps) {
             <button
               aria-pressed={active}
               className={[
-                "min-h-8 rounded px-3 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2",
+                "min-h-8 rounded px-3 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-slate-950",
                 active
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-white hover:text-slate-950",
+                  ? "bg-violet-500 text-white shadow-sm shadow-violet-950/30"
+                  : "text-slate-400 hover:bg-slate-900 hover:text-slate-100",
               ].join(" ")}
               key={option.value}
               onClick={() => onChange(option.value)}
@@ -47,7 +47,7 @@ export function AgentFilter({ value, onChange, counts }: AgentFilterProps) {
             >
               {option.label}
               {typeof count === "number" ? (
-                <span className={active ? "text-white/75" : "text-slate-400"}>
+                <span className={active ? "text-white/75" : "text-slate-500"}>
                   {" "}
                   {count}
                 </span>

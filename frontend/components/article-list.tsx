@@ -39,10 +39,10 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_CLASSES: Record<string, string> = {
-  pending: "border-amber-200 bg-amber-50 text-amber-700",
-  running: "border-blue-200 bg-blue-50 text-blue-700",
-  completed: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  failed: "border-red-200 bg-red-50 text-red-700",
+  pending: "border-amber-400/30 bg-amber-400/10 text-amber-200",
+  running: "border-sky-400/30 bg-sky-400/10 text-sky-200",
+  completed: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+  failed: "border-rose-400/30 bg-rose-400/10 text-rose-200",
 };
 
 const WINNER_LABELS: Record<string, string> = {
@@ -78,7 +78,7 @@ export function ArticleList({
 }: ArticleListProps) {
   if (articles.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm leading-6 text-slate-500">
+      <div className="rounded-md border border-dashed border-slate-700 bg-slate-900/70 px-4 py-10 text-center text-sm leading-6 text-slate-400">
         {emptyMessage}
       </div>
     );
@@ -92,7 +92,7 @@ export function ArticleList({
 
         return (
           <article
-            className="rounded-md border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50"
+            className="rounded-md border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700 hover:bg-slate-900/80"
             key={article.id}
           >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -101,8 +101,8 @@ export function ArticleList({
                   <span
                     className={`inline-flex h-6 items-center rounded-md border px-2 text-xs font-medium ${
                       isTopicArticle(article)
-                        ? "border-violet-200 bg-violet-50 text-violet-700"
-                        : "border-slate-200 bg-slate-100 text-slate-700"
+                        ? "border-violet-400/30 bg-violet-400/10 text-violet-200"
+                        : "border-slate-700 bg-slate-800 text-slate-300"
                     }`}
                   >
                     {getKindLabel(article)}
@@ -113,7 +113,7 @@ export function ArticleList({
                 </div>
 
                 <button
-                  className="block max-w-full text-left text-base font-semibold leading-6 text-slate-950 outline-none transition hover:text-blue-700 focus:text-blue-700"
+                  className="block max-w-full text-left text-base font-semibold leading-6 text-slate-100 outline-none transition hover:text-cyan-200 focus:text-cyan-200 disabled:cursor-not-allowed"
                   disabled={!onSelectArticle || isDeleting || isCreatingDebate}
                   onClick={() => onSelectArticle?.(article)}
                   type="button"
@@ -121,17 +121,17 @@ export function ArticleList({
                   {article.title}
                 </button>
 
-                <div className="mt-2 grid gap-2 text-sm leading-6 text-slate-600 md:grid-cols-2">
+                <div className="mt-2 grid gap-2 text-sm leading-6 text-slate-400 md:grid-cols-2">
                   <div>
-                    <span className="font-medium text-slate-700">来源：</span>
+                    <span className="font-medium text-slate-300">来源：</span>
                     {getSourceLabel(article)}
                   </div>
                   <div>
-                    <span className="font-medium text-slate-700">关联辩论：</span>
+                    <span className="font-medium text-slate-300">关联辩论：</span>
                     {formatDebateCount(article.debate_count)}
                   </div>
                   <div className="md:col-span-2">
-                    <span className="font-medium text-slate-700">关注问题：</span>
+                    <span className="font-medium text-slate-300">关注问题：</span>
                     {article.user_question || "暂无"}
                   </div>
                 </div>
@@ -141,7 +141,7 @@ export function ArticleList({
 
               <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
                 <button
-                  className="inline-flex h-9 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-slate-700 bg-slate-900 px-3 text-sm font-medium text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-600"
                   disabled={!onSelectArticle || isDeleting || isCreatingDebate}
                   onClick={() => onSelectArticle?.(article)}
                   type="button"
@@ -149,7 +149,7 @@ export function ArticleList({
                   查看详情
                 </button>
                 <button
-                  className="inline-flex h-9 items-center justify-center rounded-md bg-slate-950 px-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-cyan-400/30 bg-cyan-400/10 px-3 text-sm font-medium text-cyan-100 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-600"
                   disabled={!onCreateDebate || isDeleting || isCreatingDebate}
                   onClick={() => onCreateDebate?.(article)}
                   type="button"
@@ -157,7 +157,7 @@ export function ArticleList({
                   {isCreatingDebate ? "启动中" : "开始新辩论"}
                 </button>
                 <button
-                  className="inline-flex h-9 items-center justify-center rounded-md border border-red-200 bg-white px-3 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-rose-400/30 bg-rose-500/10 px-3 text-sm font-medium text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-600"
                   disabled={!onDeleteArticle || isDeleting || isCreatingDebate}
                   onClick={() => onDeleteArticle?.(article)}
                   type="button"
@@ -166,7 +166,6 @@ export function ArticleList({
                 </button>
               </div>
             </div>
-
           </article>
         );
       })}
@@ -177,7 +176,7 @@ export function ArticleList({
 function LatestDebateSummary({ article }: { article: ArticleListItem }) {
   if (!article.latest_debate_id) {
     return (
-      <div className="mt-4 rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
+      <div className="mt-4 rounded-md border border-dashed border-slate-800 bg-slate-900/70 px-3 py-3 text-sm text-slate-500">
         暂无关联辩论结果。
       </div>
     );
@@ -186,14 +185,14 @@ function LatestDebateSummary({ article }: { article: ArticleListItem }) {
   const status = article.latest_debate_status;
   const winner = article.latest_debate_winner;
   const statusClass = status
-    ? STATUS_CLASSES[status] ?? "border-slate-200 bg-slate-100 text-slate-700"
-    : "border-slate-200 bg-slate-100 text-slate-700";
+    ? STATUS_CLASSES[status] ?? "border-slate-700 bg-slate-800 text-slate-300"
+    : "border-slate-700 bg-slate-800 text-slate-300";
 
   return (
-    <div className="mt-4 grid gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm md:grid-cols-4">
+    <div className="mt-4 grid gap-3 rounded-md border border-slate-800 bg-slate-900/70 px-3 py-3 text-sm md:grid-cols-4">
       <div>
         <div className="text-xs font-medium text-slate-500">最近辩论</div>
-        <div className="mt-1 font-medium text-slate-800">#{article.latest_debate_id}</div>
+        <div className="mt-1 font-medium text-slate-200">#{article.latest_debate_id}</div>
       </div>
       <div>
         <div className="text-xs font-medium text-slate-500">状态</div>
@@ -203,13 +202,13 @@ function LatestDebateSummary({ article }: { article: ArticleListItem }) {
       </div>
       <div>
         <div className="text-xs font-medium text-slate-500">裁判结论</div>
-        <div className="mt-1 font-medium text-slate-800">
+        <div className="mt-1 font-medium text-slate-200">
           {winner ? WINNER_LABELS[winner] ?? winner : "暂无"}
         </div>
       </div>
       <div>
         <div className="text-xs font-medium text-slate-500">可信度 / 时间</div>
-        <div className="mt-1 text-slate-800">
+        <div className="mt-1 text-slate-300">
           {typeof article.latest_debate_credibility_score === "number"
             ? `${article.latest_debate_credibility_score}/100`
             : "暂无评分"}

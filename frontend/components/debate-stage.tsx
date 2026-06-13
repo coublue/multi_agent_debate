@@ -77,7 +77,7 @@ export function DebateStage({ messages, mode = "article" }: DebateStageProps) {
 
         return (
           <section
-            className="grid gap-3 rounded-md border border-slate-200 bg-white p-4 md:grid-cols-[11rem_minmax(0,1fr)]"
+            className="grid gap-3 rounded-md border border-slate-800 bg-slate-950/70 p-4 md:grid-cols-[11rem_minmax(0,1fr)]"
             key={String(stage)}
           >
             <div>
@@ -86,13 +86,13 @@ export function DebateStage({ messages, mode = "article" }: DebateStageProps) {
                   className={[
                     "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
                     isComplete
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-300 bg-slate-50 text-slate-500",
+                      ? "border-violet-300 bg-violet-500 text-white"
+                      : "border-slate-700 bg-slate-950 text-slate-500",
                   ].join(" ")}
                 >
                   {index + 1}
                 </span>
-                <h3 className="text-sm font-semibold text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-100">
                   {STAGE_LABELS[stage]}
                 </h3>
               </div>
@@ -104,7 +104,7 @@ export function DebateStage({ messages, mode = "article" }: DebateStageProps) {
                   <AgentMessageCard key={message.id} message={message} />
                 ))
               ) : (
-                <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-sm leading-6 text-slate-500">
+                <div className="rounded-md border border-dashed border-slate-700 bg-slate-900/70 px-3 py-4 text-sm leading-6 text-slate-400">
                   {isComplete
                     ? "当前筛选下没有该阶段发言。"
                     : "等待该阶段输出。"}
@@ -118,7 +118,7 @@ export function DebateStage({ messages, mode = "article" }: DebateStageProps) {
       {roleFilter !== "all" &&
       visibleMessages.length > 0 &&
       !visibleMessages.some((message) => matchesFilter(message, roleFilter)) ? (
-        <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm leading-6 text-slate-500">
+        <div className="rounded-md border border-dashed border-slate-700 bg-slate-950 px-4 py-8 text-center text-sm leading-6 text-slate-400">
           当前筛选下没有发言。
         </div>
       ) : null}

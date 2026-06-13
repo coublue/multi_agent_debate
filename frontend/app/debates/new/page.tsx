@@ -39,39 +39,46 @@ export default function NewDebatePage() {
       });
       router.push(`/debates/${debate.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "创建辩论失败。");
+      setError(err instanceof Error ? err.message : "创建文章辩论失败。");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 text-slate-900 sm:px-6 lg:py-9">
-      <nav className="mb-6 flex flex-wrap gap-4">
-        <Link className="text-sm font-medium text-blue-700 hover:text-blue-900" href="/">
-          返回首页
-        </Link>
-        <Link
-          className="text-sm font-medium text-slate-600 hover:text-slate-950"
-          href="/debates/topic/new"
-        >
-          改用快速话题辩论
-        </Link>
-      </nav>
+    <main className="min-h-screen px-4 py-8 text-zinc-100 sm:px-6 lg:py-10">
+      <div className="mx-auto max-w-4xl">
+        <nav className="mb-6 flex flex-wrap gap-3">
+          <Link
+            className="rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm font-medium text-zinc-300 transition hover:border-violet-500/60 hover:text-white"
+            href="/"
+          >
+            返回首页
+          </Link>
+          <Link
+            className="rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:border-violet-500/60 hover:text-violet-200"
+            href="/debates/topic/new"
+          >
+            切换到话题辩论
+          </Link>
+        </nav>
 
-      <section className="mb-6">
-        <p className="mb-2 text-sm font-medium text-slate-500">新建文章辩论</p>
-        <h1 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
-          提交待分析文章
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-          填写标题、正文和关注问题后，系统会创建文章并立即启动 9 阶段多 Agent 辩论。
-        </p>
-      </section>
+        <section className="mb-6 rounded-md border border-zinc-800 bg-zinc-950/80 p-5 shadow-2xl shadow-black/40">
+          <p className="mb-2 text-sm font-medium text-violet-300">
+            AI Assist: Article debate
+          </p>
+          <h1 className="text-2xl font-semibold text-white sm:text-3xl">
+            提交一篇文章，让 Agent 展开辩论
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400">
+            填写标题、正文和你关心的问题后，系统会创建文章并启动 9 阶段多 Agent 辩论。
+          </p>
+        </section>
 
-      <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <ArticleForm onSubmit={handleSubmit} loading={submitting} error={error} />
-      </section>
+        <section className="rounded-md border border-zinc-800 bg-[#111116] p-4 shadow-2xl shadow-black/50 sm:p-5">
+          <ArticleForm onSubmit={handleSubmit} loading={submitting} error={error} />
+        </section>
+      </div>
     </main>
   );
 }

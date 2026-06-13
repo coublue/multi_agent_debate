@@ -84,17 +84,17 @@ const STATE_LABELS: Record<StageProgressState, string> = {
 };
 
 const STATE_STYLES: Record<StageProgressState, string> = {
-  completed: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  current: "border-blue-300 bg-blue-50 text-blue-800",
-  pending: "border-slate-200 bg-white text-slate-500",
-  failed: "border-red-300 bg-red-50 text-red-800",
+  completed: "border-emerald-400/30 bg-emerald-400/10 text-emerald-100",
+  current: "border-violet-400/50 bg-violet-500/15 text-violet-100 shadow-[0_0_0_1px_rgba(167,139,250,0.12)]",
+  pending: "border-slate-700 bg-slate-900/70 text-slate-400",
+  failed: "border-rose-400/40 bg-rose-500/15 text-rose-100",
 };
 
 const DOT_STYLES: Record<StageProgressState, string> = {
-  completed: "border-emerald-600 bg-emerald-600 text-white",
-  current: "border-blue-600 bg-blue-600 text-white",
-  pending: "border-slate-300 bg-slate-50 text-slate-500",
-  failed: "border-red-600 bg-red-600 text-white",
+  completed: "border-emerald-400 bg-emerald-400/20 text-emerald-100",
+  current: "border-violet-300 bg-violet-500 text-white",
+  pending: "border-slate-600 bg-slate-950 text-slate-500",
+  failed: "border-rose-400 bg-rose-500/80 text-white",
 };
 
 export function getStageOrder(mode: DebateStageMode = "article") {
@@ -131,15 +131,15 @@ export function DebateStageProgress({
   ).length;
 
   return (
-    <section className="mb-5 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="mb-5 rounded-md border border-slate-800 bg-slate-950/80 p-4 shadow-sm shadow-black/20 sm:p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950">辩论进度</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="text-lg font-semibold text-slate-100">辩论进度</h2>
+          <p className="mt-1 text-sm text-slate-400">
             已完成 {completedCount}/{stageOrder.length} 个阶段
           </p>
         </div>
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
+        <span className="rounded-full border border-violet-400/30 bg-violet-500/10 px-2.5 py-1 text-xs font-medium text-violet-100">
           {getProgressSummary(status, completedCount)}
         </span>
       </div>
@@ -179,7 +179,7 @@ export function DebateStageProgress({
                     {STAGE_ROLE_LABELS[stage]}
                   </span>
                 </span>
-                <span className="mt-1 block text-xs leading-5">
+                <span className="mt-1 block text-xs leading-5 text-current/75">
                   {STATE_LABELS[stageState]} · {STAGE_DESCRIPTIONS[stage]}
                 </span>
               </span>

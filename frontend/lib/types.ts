@@ -64,6 +64,13 @@ export interface DebateCreate {
   stage_mode?: StageMode;
 }
 
+export interface DebateFollowUpCreate {
+  question: string;
+  debate_depth?: DebateDepth;
+  output_style?: OutputStyle;
+  stage_mode?: StageMode;
+}
+
 export interface TopicDebateCreate {
   topic: string;
   background?: string | null;
@@ -120,6 +127,8 @@ export interface AgentMessageRead {
 export interface DebateRead {
   id: number;
   article_id: number;
+  parent_debate_id: number | null;
+  follow_up_question: string | null;
   status: DebateStatus;
   debate_depth?: DebateDepth | null;
   output_style?: OutputStyle | null;

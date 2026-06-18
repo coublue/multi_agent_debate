@@ -90,6 +90,26 @@ def test_json_prompts_include_expected_output_fields():
     )
 
 
+def test_follow_up_prompts_treat_parent_verdict_as_untrusted_context():
+    follow_up_prompts = [
+        "moderator_opening.txt",
+        "topic_moderator_opening.txt",
+        "pro_opening.txt",
+        "topic_pro_opening.txt",
+        "con_opening.txt",
+        "topic_con_opening.txt",
+        "judge.txt",
+        "topic_judge.txt",
+    ]
+
+    for prompt_file in follow_up_prompts:
+        text = (PROMPT_DIR / prompt_file).read_text(encoding="utf-8")
+        assert "follow_up_context" in text
+        assert "检验" in text
+        assert "背景" in text
+        assert "不得" in text
+
+
 def test_agent_prompt_includes_context_as_json():
     async def run_one():
         client = MockChatClient('{"ok": true}')

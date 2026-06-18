@@ -16,8 +16,11 @@ import {
   type DebateViewMode,
 } from "@/components/debate-view-tabs";
 import { DisagreementMap } from "@/components/disagreement-map";
+import { FollowUpDebateForm } from "@/components/follow-up-debate-form";
 import { JudgeReport } from "@/components/judge-report";
+import { PageBackLink } from "@/components/page-back-link";
 import { ReportActions } from "@/components/report-actions";
+import { SiteHeader } from "@/components/site-header";
 import { deleteDebate, getDebate, rerunDebate } from "@/lib/api";
 import type { DebateDetailRead } from "@/lib/types";
 
@@ -91,7 +94,7 @@ export default function DebateDetailPage() {
       setDeleting(true);
       setError(null);
       await deleteDebate(debate.id);
-      router.push("/");
+      router.push("/debates");
     } catch (err) {
       setError(err instanceof Error ? err.message : "删除辩论失败。");
       setDeleting(false);
@@ -132,28 +135,28 @@ export default function DebateDetailPage() {
     0;
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:py-9">
-      <div className="mx-auto max-w-6xl">
-        <nav className="mb-6 flex items-center justify-between gap-4">
-          <Link className="text-sm font-medium text-violet-200 hover:text-white" href="/">
-            返回首页
-          </Link>
-          <div className="flex items-center gap-3">
-            {debate ? (
-              <button
-                className="text-sm font-medium text-rose-300 transition hover:text-rose-100 disabled:cursor-not-allowed disabled:text-slate-600"
-                disabled={deleting}
-                onClick={handleDeleteDebate}
-                type="button"
-              >
-                {deleting ? "删除中..." : "删除辩论"}
-              </button>
-            ) : null}
-            <Link className="text-sm font-medium text-slate-300 hover:text-white" href="/debates/new">
-              新建辩论
-            </Link>
+    <>
+      <SiteHeader />
+      <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:py-9">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <PageBackLink href="/debates" label="返回历史辩论" />
+            <div className="flex items-center gap-3">
+              {debate ? (
+                <button
+                  className="text-sm font-medium text-rose-300 transition hover:text-rose-100 disabled:cursor-not-allowed disabled:text-slate-600"
+                  disabled={deleting}
+                  onClick={handleDeleteDebate}
+                  type="button"
+                >
+                  {deleting ? "删除中..." : "删除辩论"}
+                </button>
+              ) : null}
+              <Link className="text-sm font-medium text-slate-300 hover:text-white" href="/debates/new">
+                新建辩论
+              </Link>
+            </div>
           </div>
-        </nav>
 
         {loading ? <StateMessage text="正在加载辩论详情..." /> : null}
         {error ? <StateMessage tone="error" text={error} /> : null}
@@ -171,6 +174,35 @@ export default function DebateDetailPage() {
               stageOrder={stageOrder}
               visibleMessageCount={visibleMessageCount}
             />
+
+            {debate.follow_up_question ? (
+              <section className="mb-5 rounded-md border border-sky-400/25 bg-sky-500/10 p-4 shadow-sm shadow-black/20 sm:p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-300">
+                  Follow-up debate
+                </p>
+                <h2 className="mt-2 text-sm font-semibold text-slate-100">
+                  当前追问
+                </h2>
+                <p className="mt-2 break-words border-l-2 border-sky-400 pl-3 text-sm leading-6 text-slate-200">
+                  {debate.follow_up_question}
+                </p>
+                {debate.parent_debate_id ? (
+                  <Link
+                    className="mt-4 inline-flex text-sm font-medium text-sky-200 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+                    href={`/debates/${debate.parent_debate_id}`}
+                  >
+                    查看父辩论 #{debate.parent_debate_id}
+                  </Link>
+                ) : null}
+              </section>
+            ) : null}
+
+            {debate.status === "completed" ? (
+              <FollowUpDebateForm
+                debateId={debate.id}
+                suggestedQuestions={debate.final_report?.follow_up_questions}
+              />
+            ) : null}
 
             <section className="mb-5 rounded-md border border-slate-800 bg-slate-950/80 p-4 shadow-sm shadow-black/20 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -260,8 +292,9 @@ export default function DebateDetailPage() {
             ) : null}
           </>
         ) : null}
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }
 

@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import Column, Enum as SAEnum, JSON
+from sqlalchemy import Column, Enum as SAEnum, ForeignKey, Integer, JSON
 from sqlmodel import Field, SQLModel
 
 
@@ -57,6 +57,17 @@ class Debate(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     article_id: int = Field(index=True, foreign_key="articles.id")
+    parent_debate_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            Integer,
+            ForeignKey("debates.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+    )
+    follow_up_question: Optional[str] = None
+    parent_context_snapshot: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     status: DebateStatus = Field(
         default=DebateStatus.PENDING,
         sa_column=enum_value_column(DebateStatus, nullable=False, index=True),

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { TopicDebateForm } from "@/components/topic-debate-form";
+import { PageBackLink } from "@/components/page-back-link";
+import { SiteHeader } from "@/components/site-header";
 import { createTopicDebate } from "@/lib/api";
 import type { TopicDebateCreate } from "@/lib/types";
 
@@ -41,15 +43,14 @@ export default function NewTopicDebatePage() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-8 text-zinc-100 sm:px-6 lg:py-10">
-      <div className="mx-auto max-w-4xl">
-        <nav className="mb-6 flex flex-wrap gap-3">
-          <Link
-            className="rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm font-medium text-zinc-300 transition hover:border-violet-500/60 hover:text-white"
-            href="/"
-          >
-            返回首页
-          </Link>
+    <main className="min-h-screen text-zinc-100">
+      <SiteHeader />
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:py-10">
+        <nav
+          aria-label="页面层级与辩论类型切换"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3"
+        >
+          <PageBackLink href="/" label="返回首页" />
           <Link
             className="rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm font-medium text-zinc-400 transition hover:border-violet-500/60 hover:text-violet-200"
             href="/debates/new"

@@ -37,3 +37,4 @@
   "questionable_parts": ["存疑部分"],
   "final_summary": "给用户的最终阅读建议"
 }
+继续追问约束：如果 article 包含 follow_up_context，父辩论裁判结论仅为待检验背景。必须根据本轮论证独立裁决，不得继承父辩论胜负，也不得把父结论当作事实或简单复述父报告。

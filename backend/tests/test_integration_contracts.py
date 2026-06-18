@@ -116,6 +116,8 @@ def test_debate_api_schema_core_fields_are_stable() -> None:
     assert _schema_properties(DebateRead) == {
         "id",
         "article_id",
+        "parent_debate_id",
+        "follow_up_question",
         "status",
         "main_claim",
         "debate_topic",

@@ -5,11 +5,12 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlmodel import Session, desc, select
 
 from app.db import get_session
-from app.models import AgentMessage, Article, Debate
+from app.models import AgentMessage, Article, Debate, DebateStatus
 from app.schemas import (
     AgentMessageRead,
     DebateCreate,
     DebateDetailRead,
+    DebateFollowUpCreate,
     DebateListItem,
     DebateRead,
 )
@@ -28,6 +29,8 @@ def _debate_read(debate: Debate) -> DebateRead:
     return DebateRead(
         id=debate.id,
         article_id=debate.article_id,
+        parent_debate_id=debate.parent_debate_id,
+        follow_up_question=debate.follow_up_question,
         status=debate.status,
         main_claim=debate.main_claim,
         debate_topic=debate.debate_topic,
@@ -70,6 +73,28 @@ async def _run_debate_background_task(service: Any, debate_id: int) -> None:
         raise RuntimeError("Debate service must expose run_debate_background.")
     if isawaitable(result):
         await result
+
+
+async def _create_follow_up_service(
+    service: Any,
+    session: Session,
+    parent_debate_id: int,
+    payload: DebateFollowUpCreate,
+) -> Debate:
+    create_func = getattr(service, "create_follow_up_debate", None)
+    if not callable(create_func):
+        raise RuntimeError("Debate service must expose create_follow_up_debate.")
+    result = create_func(
+        session=session,
+        parent_debate_id=parent_debate_id,
+        question=payload.question,
+        debate_depth=payload.debate_depth,
+        output_style=payload.output_style,
+        stage_mode=payload.stage_mode,
+    )
+    if isawaitable(result):
+        result = await result
+    return result
 
 
 async def _rerun_debate_service(
@@ -167,6 +192,58 @@ def get_debate(
     debate_data["article"] = article.model_dump()
     debate_data["messages"] = [AgentMessageRead(**message.model_dump()) for message in messages]
     return DebateDetailRead(**debate_data)
+
+
+@router.post(
+    "/{debate_id}/follow-ups",
+    response_model=DebateRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_follow_up_debate(
+    debate_id: int,
+    payload: DebateFollowUpCreate,
+    background_tasks: BackgroundTasks,
+    session: Annotated[Session, Depends(get_session)],
+    service: Annotated[Any, Depends(get_debate_service)],
+) -> DebateRead:
+    parent = session.get(Debate, debate_id)
+    if parent is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Debate not found",
+        )
+    if parent.status != DebateStatus.COMPLETED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only completed debates can be followed up",
+        )
+
+    existing = session.exec(
+        select(Debate).where(
+            Debate.parent_debate_id == debate_id,
+            Debate.follow_up_question == payload.question,
+            Debate.debate_depth == (payload.debate_depth or parent.debate_depth),
+            Debate.output_style == (payload.output_style or parent.output_style),
+            Debate.stage_mode == (payload.stage_mode or parent.stage_mode),
+            Debate.status.in_([DebateStatus.PENDING, DebateStatus.RUNNING]),
+        )
+    ).first()
+    if existing is not None:
+        return _debate_read(existing)
+
+    try:
+        debate = await _create_follow_up_service(service, session, debate_id, payload)
+    except ValueError as exc:
+        detail = str(exc)
+        code = (
+            status.HTTP_409_CONFLICT
+            if detail == "Only completed debates can be followed up"
+            else status.HTTP_400_BAD_REQUEST
+        )
+        raise HTTPException(status_code=code, detail=detail) from exc
+
+    background_tasks.add_task(_run_debate_background_task, service, debate.id)
+    return _debate_read(debate)
 
 
 @router.post("/{debate_id}/rerun", response_model=DebateRead)

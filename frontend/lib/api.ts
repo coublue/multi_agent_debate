@@ -4,6 +4,7 @@ import type {
   ArticleRead,
   DebateCreate,
   DebateDetailRead,
+  DebateFollowUpCreate,
   DebateListItem,
   DebateRead,
   HealthCheckRead,
@@ -146,6 +147,16 @@ export function listDebates(): Promise<DebateListItem[]> {
 
 export function getDebate(debateId: number): Promise<DebateDetailRead> {
   return request<DebateDetailRead>(`/api/debates/${debateId}`);
+}
+
+export function createFollowUpDebate(
+  debateId: number,
+  payload: DebateFollowUpCreate,
+): Promise<DebateRead> {
+  return request<DebateRead>(`/api/debates/${debateId}/follow-ups`, {
+    method: "POST",
+    body: payload,
+  });
 }
 
 export function rerunDebate(debateId: number): Promise<DebateRead> {

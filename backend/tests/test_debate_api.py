@@ -109,6 +109,25 @@ class FakeDebateService:
     async def run_debate_background(self, debate_id: int) -> None:
         self.background_runs.append(debate_id)
 
+    def create_follow_up_debate(
+        self,
+        session: Session,
+        parent_debate_id: int,
+        question: str,
+        *,
+        debate_depth: DebateDepth | None = None,
+        output_style: OutputStyle | None = None,
+        stage_mode: StageMode | None = None,
+    ) -> Debate:
+        return debate_service.create_follow_up_debate(
+            session=session,
+            parent_debate_id=parent_debate_id,
+            question=question,
+            debate_depth=debate_depth,
+            output_style=output_style,
+            stage_mode=stage_mode,
+        )
+
     def rerun_debate(self, session: Session, debate_id: int) -> Debate | None:
         return debate_service.rerun_debate(session=session, debate_id=debate_id)
 
@@ -320,3 +339,107 @@ def test_delete_missing_debate_returns_404() -> None:
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Debate not found"}
+
+
+def test_create_follow_up_inherits_parent_and_starts_background() -> None:
+    with make_test_client() as client:
+        fake_service = FakeDebateService(
+            create_status=DebateStatus.COMPLETED,
+            seed_result_fields=True,
+        )
+        app.dependency_overrides[get_debate_service] = lambda: fake_service
+        article = client.post(
+            "/api/articles",
+            json={
+                "title": "Parent article",
+                "content": "Original immutable content",
+                "user_question": "Original question",
+            },
+        ).json()
+        parent = client.post(
+            "/api/debates",
+            json={
+                "article_id": article["id"],
+                "debate_depth": "deep",
+                "output_style": "concise",
+                "stage_mode": "article_9",
+            },
+        ).json()
+
+        response = client.post(
+            f"/api/debates/{parent['id']}/follow-ups",
+            json={"question": "  Does it still hold for startups?  "},
+        )
+
+        assert response.status_code == 201
+        child = response.json()
+        assert child["article_id"] == parent["article_id"]
+        assert child["parent_debate_id"] == parent["id"]
+        assert child["follow_up_question"] == "Does it still hold for startups?"
+        assert child["debate_depth"] == "deep"
+        assert child["output_style"] == "concise"
+        assert child["stage_mode"] == "article_9"
+        assert fake_service.background_runs == [parent["id"], child["id"]]
+
+        detail = client.get(f"/api/debates/{child['id']}").json()
+        assert detail["article"]["content"] == "Original immutable content"
+        assert detail["article"]["user_question"] == "Original question"
+
+
+def test_follow_up_validates_parent_status_missing_parent_and_blank_question() -> None:
+    with make_test_client() as client:
+        fake_service = FakeDebateService(create_status=DebateStatus.PENDING)
+        app.dependency_overrides[get_debate_service] = lambda: fake_service
+        article = client.post(
+            "/api/articles",
+            json={"title": "Pending", "content": "Still running"},
+        ).json()
+        parent = client.post("/api/debates", json={"article_id": article["id"]}).json()
+
+        pending = client.post(
+            f"/api/debates/{parent['id']}/follow-ups",
+            json={"question": "What next?"},
+        )
+        missing = client.post(
+            "/api/debates/404/follow-ups",
+            json={"question": "What next?"},
+        )
+        blank = client.post(
+            f"/api/debates/{parent['id']}/follow-ups",
+            json={"question": "   "},
+        )
+
+        assert pending.status_code == 409
+        assert pending.json() == {
+            "detail": "Only completed debates can be followed up"
+        }
+        assert missing.status_code == 404
+        assert missing.json() == {"detail": "Debate not found"}
+        assert blank.status_code == 422
+
+
+def test_follow_up_accepts_config_overrides_and_deduplicates_active_request() -> None:
+    with make_test_client() as client:
+        fake_service = FakeDebateService(create_status=DebateStatus.COMPLETED)
+        app.dependency_overrides[get_debate_service] = lambda: fake_service
+        article = client.post(
+            "/api/articles",
+            json={"title": "Parent", "content": "Body"},
+        ).json()
+        parent = client.post("/api/debates", json={"article_id": article["id"]}).json()
+        payload = {
+            "question": "Narrow the scope",
+            "debate_depth": "quick",
+            "output_style": "concise",
+            "stage_mode": "article_9",
+        }
+
+        first = client.post(f"/api/debates/{parent['id']}/follow-ups", json=payload)
+        second = client.post(f"/api/debates/{parent['id']}/follow-ups", json=payload)
+
+        assert first.status_code == 201
+        assert second.status_code == 201
+        assert second.json()["id"] == first.json()["id"]
+        assert first.json()["debate_depth"] == "quick"
+        assert first.json()["output_style"] == "concise"
+        assert fake_service.background_runs == [parent["id"], first.json()["id"]]

@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ArticleDetail } from "@/components/article-detail";
+import { PageBackLink } from "@/components/page-back-link";
+import { SiteHeader } from "@/components/site-header";
 import {
   createDebate,
   deleteArticle,
@@ -130,16 +131,12 @@ export default function ArticleDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:py-9">
-      <div className="mx-auto max-w-6xl">
-        <nav className="mb-6 flex items-center justify-between gap-4">
-          <Link className="text-sm font-medium text-cyan-300 hover:text-cyan-100" href="/articles">
-            返回文章库
-          </Link>
-          <Link className="text-sm font-medium text-slate-300 hover:text-white" href="/debates/new">
-            新建辩论
-          </Link>
-        </nav>
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      <SiteHeader />
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-9">
+        <div className="mb-5">
+          <PageBackLink href="/articles" label="返回文章库" />
+        </div>
 
         {loading ? <StateMessage text="正在加载文章详情..." /> : null}
         {error ? <StateMessage tone="error" text={error} /> : null}

@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { ArticleList } from "@/components/article-list";
+import { PageBackLink } from "@/components/page-back-link";
+import { SiteHeader } from "@/components/site-header";
 import { createDebate, deleteArticle, listArticles } from "@/lib/api";
 import type { ArticleListItem } from "@/lib/types";
 
@@ -129,16 +130,12 @@ export default function ArticlesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:py-10">
-      <div className="mx-auto max-w-6xl">
-        <nav className="mb-6 flex items-center justify-between gap-4">
-          <Link className="text-sm font-medium text-cyan-300 hover:text-cyan-100" href="/">
-            返回首页
-          </Link>
-          <Link className="text-sm font-medium text-slate-300 hover:text-white" href="/debates/new">
-            新建辩论
-          </Link>
-        </nav>
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      <SiteHeader />
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
+        <div className="mb-5">
+          <PageBackLink href="/" label="返回首页" />
+        </div>
 
         <section className="mb-8 flex flex-col gap-4 border-b border-slate-800 pb-7 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">

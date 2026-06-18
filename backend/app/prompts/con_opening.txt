@@ -26,3 +26,4 @@
   "questionable_parts": ["原文中存疑或证据不足的部分"],
   "unresolved_questions": ["原文不足以回答的问题"]
 }
+继续追问约束：如果 article 包含 follow_up_context，父辩论裁判结论仅为待检验背景。请围绕当前 user_question 独立论证，不得直接继承父辩论胜负或把父结论当作事实。

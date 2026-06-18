@@ -24,6 +24,11 @@ from app.models.debate import (
 from app.services.article_service import get_article
 
 
+FOLLOW_UP_LIST_LIMIT = 5
+FOLLOW_UP_TEXT_LIMIT = 1000
+FOLLOW_UP_ITEM_TEXT_LIMIT = 500
+
+
 def create_debate(
     session: Session,
     article_id: int,
@@ -82,6 +87,86 @@ def create_topic_debate(
         output_style=output_style,
         stage_mode=stage_mode,
     )
+
+
+def create_follow_up_debate(
+    session: Session,
+    parent_debate_id: int,
+    question: str,
+    *,
+    debate_depth: DebateDepth | str | None = None,
+    output_style: OutputStyle | str | None = None,
+    stage_mode: StageMode | str | None = None,
+) -> Debate:
+    parent = session.get(Debate, parent_debate_id)
+    if parent is None:
+        raise ValueError("Debate not found")
+    if parent.status != DebateStatus.COMPLETED:
+        raise ValueError("Only completed debates can be followed up")
+
+    normalized_question = question.strip()
+    if not normalized_question:
+        raise ValueError("Question must not be blank")
+
+    article = get_article(session, parent.article_id)
+    if article is None:
+        raise ValueError(f"Article {parent.article_id} not found")
+
+    resolved_depth, resolved_style, resolved_mode = _resolve_debate_config(
+        article,
+        debate_depth=debate_depth or parent.debate_depth,
+        output_style=output_style or parent.output_style,
+        stage_mode=stage_mode or parent.stage_mode,
+    )
+    # A repeated request with the same effective config while the first child is
+    # queued/running is treated as the same operation. Completed children may be
+    # intentionally recreated.
+    existing = session.exec(
+        select(Debate).where(
+            Debate.parent_debate_id == parent.id,
+            Debate.follow_up_question == normalized_question,
+            Debate.debate_depth == resolved_depth,
+            Debate.output_style == resolved_style,
+            Debate.stage_mode == resolved_mode,
+            Debate.status.in_([DebateStatus.PENDING, DebateStatus.RUNNING]),
+        )
+    ).first()
+    if existing is not None:
+        return existing
+
+    child = Debate(
+        article_id=parent.article_id,
+        parent_debate_id=parent.id,
+        follow_up_question=normalized_question,
+        parent_context_snapshot=build_follow_up_context(parent),
+        status=DebateStatus.PENDING,
+        debate_depth=resolved_depth,
+        output_style=resolved_style,
+        stage_mode=resolved_mode,
+    )
+    session.add(child)
+    session.commit()
+    session.refresh(child)
+    return child
+
+
+def build_follow_up_context(parent: Debate) -> dict[str, Any]:
+    report = parent.final_report or {}
+    return {
+        "parent_debate_id": parent.id,
+        "main_claim": _clip_optional_text(
+            parent.main_claim or report.get("main_claim"), FOLLOW_UP_TEXT_LIMIT
+        ),
+        "debate_topic": _clip_optional_text(parent.debate_topic, FOLLOW_UP_TEXT_LIMIT),
+        "verdict": _clip_optional_text(report.get("verdict"), FOLLOW_UP_TEXT_LIMIT),
+        "final_summary": _clip_optional_text(
+            report.get("final_summary"), FOLLOW_UP_TEXT_LIMIT
+        ),
+        "decision_basis": _clip_text_list(report.get("decision_basis")),
+        "key_disagreements": _clip_text_list(report.get("key_disagreements")),
+        "credible_parts": _clip_text_list(report.get("credible_parts")),
+        "questionable_parts": _clip_text_list(report.get("questionable_parts")),
+    }
 
 
 async def create_and_run_debate(
@@ -191,6 +276,13 @@ def delete_debate(session: Session, debate_id: int) -> bool:
     ).all()
     for message in messages:
         session.delete(message)
+
+    children = session.exec(
+        select(Debate).where(Debate.parent_debate_id == debate_id)
+    ).all()
+    for child in children:
+        child.parent_debate_id = None
+        session.add(child)
 
     session.delete(debate)
     session.commit()
@@ -314,6 +406,9 @@ def _article_payload(article: Article, debate: Debate | None = None) -> dict[str
                 "stage_mode": debate.stage_mode.value,
             }
         )
+        if debate.follow_up_question:
+            payload["user_question"] = debate.follow_up_question
+            payload["follow_up_context"] = debate.parent_context_snapshot or {}
     if article.source == "topic":
         payload.update(
             {
@@ -346,6 +441,26 @@ def _resolve_debate_config(
     if not is_topic and mode != StageMode.ARTICLE_9:
         raise ValueError("Article debates only support article_9 stage mode")
     return depth, style, mode
+
+
+def _clip_optional_text(value: Any, limit: int) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    return text[:limit]
+
+
+def _clip_text_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    clipped: list[str] = []
+    for item in value[:FOLLOW_UP_LIST_LIMIT]:
+        text = _clip_optional_text(item, FOLLOW_UP_ITEM_TEXT_LIMIT)
+        if text is not None:
+            clipped.append(text)
+    return clipped
 
 
 def _as_optional_str(value: Any) -> str | None:

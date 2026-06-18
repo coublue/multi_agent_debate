@@ -1,41 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import { DebateStatus } from "@/components/debate-status";
+import { SiteHeader } from "@/components/site-header";
 import { listDebates } from "@/lib/api";
 import type { DebateListItem } from "@/lib/types";
 
-const featureCards = [
+const debateFlowSteps = [
   {
-    mark: "AI",
-    title: "文章深度辩论",
-    description: "围绕一篇文章拆解主张、证据、反驳和可信度。",
+    step: "01",
+    title: "输入文章或话题",
+    description: "提交完整文章进行深度分析，或输入一个话题快速启动讨论。",
   },
   {
-    mark: "Q",
-    title: "快速话题辩论",
-    description: "输入一个问题，让正反方迅速展开多阶段交锋。",
+    step: "02",
+    title: "提取关注问题",
+    description: "从输入中识别核心主张、用户关注点与真正需要回答的辩题。",
   },
   {
-    mark: "VS",
-    title: "正反方交锋",
-    description: "主持人、正方、反方和裁判各司其职，过程清晰可追踪。",
+    step: "03",
+    title: "主持人定义边界",
+    description: "主持人明确概念、评价标准和争议范围，让双方围绕同一问题展开。",
   },
   {
-    mark: "MAP",
-    title: "争议点地图",
-    description: "把双方真正分歧放到同一张结构化视图里。",
+    step: "04",
+    title: "正反方多轮交锋",
+    description: "正反方提出论点、证据与反驳，逐步暴露共识、分歧和推理漏洞。",
   },
   {
-    mark: "J",
-    title: "裁判报告",
-    description: "输出结论、判定依据、可信部分和存疑部分。",
-  },
-  {
-    mark: "MD",
-    title: "Markdown 导出",
-    description: "把分析结果保存成可归档、可复制、可继续编辑的报告。",
+    step: "05",
+    title: "裁判形成报告",
+    description: "裁判综合双方表现，给出结论、可信度、存疑部分与可继续追问的方向。",
   },
 ] as const;
 
@@ -63,83 +60,57 @@ function buildTopicHref(topic: string, question: string) {
   return `/debates/topic/new?${params.toString()}`;
 }
 
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export default function HomePage() {
   const [debates, setDebates] = useState<DebateListItem[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let alive = true;
-
-    async function loadDebateStats() {
-      try {
-        setStatsLoading(true);
-        setStatsError(null);
-        const data = await listDebates();
-        if (alive) {
-          setDebates(data);
-        }
-      } catch (err) {
-        if (alive) {
-          setStatsError(err instanceof Error ? err.message : "统计加载失败");
-        }
-      } finally {
-        if (alive) {
-          setStatsLoading(false);
-        }
-      }
+  const loadDebates = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      setStatsError(null);
+      setDebates(await listDebates());
+    } catch (err) {
+      setStatsError(err instanceof Error ? err.message : "工作台加载失败");
+    } finally {
+      setStatsLoading(false);
     }
-
-    loadDebateStats();
-    return () => {
-      alive = false;
-    };
   }, []);
+
+  useEffect(() => {
+    void loadDebates();
+  }, [loadDebates]);
 
   const runningDebates = debates.filter(
     (debate) => debate.status === "pending" || debate.status === "running",
   ).length;
   const completedDebates = debates.filter((debate) => debate.status === "completed").length;
-  const recentDebates = debates.slice(0, 3);
 
   return (
     <main className="min-h-screen text-neutral-100">
-      <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
-        <Link className="flex items-center gap-2 text-sm font-semibold text-white" href="/">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md border border-white/20 bg-white text-sm font-black text-black">
-            M
-          </span>
-          Multi Agent Debate
-        </Link>
-        <nav className="hidden items-center gap-5 text-sm font-medium text-neutral-400 md:flex">
-          <Link className="transition hover:text-white" href="/articles">
-            文章库
-          </Link>
-          <Link className="transition hover:text-white" href="/debates">
-            历史辩论
-          </Link>
-          <Link className="transition hover:text-white" href="/debates/topic/new">
-            话题辩论
-          </Link>
-        </nav>
-        <Link
-          className="inline-flex h-10 items-center justify-center rounded-md bg-purple-600 px-4 text-sm font-semibold text-white transition hover:bg-purple-500"
-          href="/debates/new"
-        >
-          开始辩论
-        </Link>
-      </header>
+      <SiteHeader />
 
       <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-10 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:pb-16 lg:pt-16">
         <div className="min-w-0 text-center lg:text-left">
-          <p className="mb-5 text-sm font-semibold uppercase tracking-[0.28em] text-purple-300">
-            AI Debate Workspace
+          <p className="mb-4 text-sm font-semibold tracking-[0.2em] text-purple-300">
+            多 Agent 分析工作台
           </p>
           <h1 className="mx-auto max-w-4xl text-4xl font-semibold leading-[1.05] tracking-normal text-white sm:text-5xl lg:mx-0 lg:text-6xl">
             让多个 Agent 替你思考、交锋、裁判
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-neutral-300 lg:mx-0">
-            输入文章或话题，系统会组织主持人、正方、反方和裁判完成多阶段辩论，最后生成可导出的结构化报告。
+            输入文章或一个具体问题，交给主持人、正方、反方和裁判完成多阶段分析，得到可检查、可导出的结论。
           </p>
 
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
@@ -161,24 +132,33 @@ export default function HomePage() {
         <HeroEditorPreview />
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-5 px-4 py-8 sm:px-6 lg:grid-cols-[0.78fr_1.22fr]">
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <WorkspaceOverview
           completedDebates={completedDebates}
           debates={debates}
           loading={statsLoading}
-          recentDebates={recentDebates}
+          onRetry={loadDebates}
           runningDebates={runningDebates}
           statsError={statsError}
         />
+      </section>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featureCards.map((feature) => (
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <div className="mb-5 max-w-2xl">
+          <p className="text-sm font-semibold text-purple-300">辩论流程</p>
+          <h2 className="mt-1 text-2xl font-semibold text-white">从输入问题到可检查的裁判报告</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-400">
+            每场辩论沿着明确的分析链路推进，过程和最终依据都可以回看。
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {debateFlowSteps.map((feature) => (
             <article
               className="rounded-md border border-neutral-800 bg-neutral-900 p-5 transition hover:border-purple-500/70 hover:bg-neutral-800"
               key={feature.title}
             >
-              <div className="mb-5 inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-purple-400/30 bg-purple-500/10 px-2 text-xs font-black text-purple-300">
-                {feature.mark}
+              <div className="mb-5 text-xs font-semibold tracking-[0.2em] text-purple-300">
+                {feature.step}
               </div>
               <h2 className="text-base font-semibold text-white">{feature.title}</h2>
               <p className="mt-2 text-sm leading-6 text-neutral-400">
@@ -303,63 +283,156 @@ function WorkspaceOverview({
   completedDebates,
   debates,
   loading,
-  recentDebates,
+  onRetry,
   runningDebates,
   statsError,
 }: {
   completedDebates: number;
   debates: DebateListItem[];
   loading: boolean;
-  recentDebates: DebateListItem[];
+  onRetry: () => Promise<void>;
   runningDebates: number;
   statsError: string | null;
 }) {
-  return (
-    <aside className="rounded-md border border-neutral-800 bg-neutral-900 p-5">
-      <p className="text-sm font-semibold text-purple-300">工作台</p>
-      <h2 className="mt-1 text-xl font-semibold text-white">辩论概览</h2>
+  const activeDebates = debates
+    .filter((debate) => debate.status === "pending" || debate.status === "running")
+    .slice(0, 3);
+  const recentCompleted = debates
+    .filter((debate) => debate.status === "completed")
+    .slice(0, 3);
 
-      <div className="mt-5 grid grid-cols-3 gap-2">
-        <Metric label="辩论总数" value={loading ? "-" : String(debates.length)} />
-        <Metric label="进行中" value={loading ? "-" : String(runningDebates)} />
-        <Metric label="已完成" value={loading ? "-" : String(completedDebates)} />
+  return (
+    <section className="rounded-md border border-neutral-800 bg-neutral-900/80 p-5 sm:p-6">
+      <div className="flex flex-col gap-5 border-b border-neutral-800 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-purple-300">继续工作</p>
+          <h2 className="mt-1 text-2xl font-semibold text-white">回到正在推进的分析</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-400">
+            优先查看排队中和辩论中的任务，也可以快速回看最近结论。
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 sm:min-w-[320px]">
+          <Metric label="全部" value={loading ? "-" : String(debates.length)} />
+          <Metric label="进行中" value={loading ? "-" : String(runningDebates)} />
+          <Metric label="已完成" value={loading ? "-" : String(completedDebates)} />
+        </div>
       </div>
 
       {statsError ? (
-        <div className="mt-4 rounded-md border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm leading-6 text-red-200">
-          {statsError}
-        </div>
-      ) : null}
-
-      <div className="mt-5 border-t border-neutral-800 pt-5">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-neutral-200">最近记录</h3>
-          <Link className="text-xs font-medium text-purple-300 hover:text-purple-200" href="/debates">
-            全部
-          </Link>
-        </div>
-        {recentDebates.length > 0 ? (
-          <div className="space-y-2">
-            {recentDebates.map((debate) => (
-              <Link
-                className="block rounded-md border border-neutral-800 bg-black/30 px-3 py-2 transition hover:border-neutral-600"
-                href={`/debates/${debate.id}`}
-                key={debate.id}
-              >
-                <div className="truncate text-sm font-medium text-neutral-100">
-                  {debate.title}
-                </div>
-                <div className="mt-1 text-xs text-neutral-500">{debate.status}</div>
-              </Link>
-            ))}
+        <div className="mt-5 flex flex-col gap-3 rounded-md border border-red-400/30 bg-red-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-red-100">工作台暂时无法加载</p>
+            <p className="mt-1 text-sm text-red-200/80">{statsError}</p>
           </div>
-        ) : (
-          <p className="rounded-md border border-dashed border-neutral-700 px-3 py-5 text-center text-sm text-neutral-500">
-            还没有辩论记录。
+          <button
+            className="inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-red-300/30 px-3 text-sm font-semibold text-red-100 outline-none transition hover:bg-red-400/10 focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-wait disabled:opacity-60"
+            disabled={loading}
+            onClick={() => void onRetry()}
+            type="button"
+          >
+            {loading ? "重新加载中" : "重新加载"}
+          </button>
+        </div>
+      ) : loading ? (
+        <div className="mt-5 grid gap-4 lg:grid-cols-2" aria-live="polite">
+          <WorkspaceSkeleton title="正在进行" />
+          <WorkspaceSkeleton title="最近完成" />
+        </div>
+      ) : debates.length > 0 ? (
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <DebateGroup
+            debates={activeDebates}
+            emptyText="当前没有进行中的辩论。"
+            title="正在进行"
+          />
+          <DebateGroup
+            debates={recentCompleted}
+            emptyText="还没有已完成的辩论。"
+            title="最近完成"
+          />
+        </div>
+      ) : (
+        <div className="mt-5 rounded-md border border-dashed border-neutral-700 bg-black/25 px-5 py-8 text-center">
+          <h3 className="text-base font-semibold text-white">从第一场辩论开始</h3>
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-neutral-400">
+            提交一篇文章做完整分析，或直接用一个问题快速试跑多 Agent 交锋。
           </p>
-        )}
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+            <Link
+              className="inline-flex h-10 items-center justify-center rounded-md bg-purple-600 px-4 text-sm font-semibold text-white transition hover:bg-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
+              href="/debates/new"
+            >
+              开始文章辩论
+            </Link>
+            <Link
+              className="inline-flex h-10 items-center justify-center rounded-md border border-neutral-700 px-4 text-sm font-semibold text-neutral-200 transition hover:border-neutral-500 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
+              href="/debates/topic/new"
+            >
+              快速话题辩论
+            </Link>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function DebateGroup({
+  debates,
+  emptyText,
+  title,
+}: {
+  debates: DebateListItem[];
+  emptyText: string;
+  title: string;
+}) {
+  return (
+    <div className="rounded-md border border-neutral-800 bg-black/25 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-neutral-200">{title}</h3>
+        <Link
+          className="rounded text-xs font-medium text-purple-300 outline-none hover:text-purple-200 focus-visible:ring-2 focus-visible:ring-purple-400"
+          href="/debates"
+        >
+          查看全部
+        </Link>
       </div>
-    </aside>
+      {debates.length > 0 ? (
+        <div className="space-y-2">
+          {debates.map((debate) => (
+            <Link
+              className="block rounded-md border border-neutral-800 bg-neutral-950 px-3 py-3 outline-none transition hover:border-purple-500/60 hover:bg-neutral-900 focus-visible:ring-2 focus-visible:ring-purple-400"
+              href={`/debates/${debate.id}`}
+              key={debate.id}
+            >
+              <div className="truncate text-sm font-medium text-neutral-100">{debate.title}</div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <DebateStatus status={debate.status} />
+                <span className="text-xs text-neutral-500">文章 #{debate.article_id}</span>
+                <span className="text-xs text-neutral-500">{formatDate(debate.created_at)}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-md border border-dashed border-neutral-800 px-3 py-6 text-center text-sm text-neutral-500">
+          {emptyText}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function WorkspaceSkeleton({ title }: { title: string }) {
+  return (
+    <div className="rounded-md border border-neutral-800 bg-black/25 p-4">
+      <h3 className="text-sm font-semibold text-neutral-300">{title}</h3>
+      <div className="mt-3 space-y-2">
+        {[0, 1].map((item) => (
+          <div className="h-[68px] animate-pulse rounded-md bg-neutral-800/70" key={item} />
+        ))}
+      </div>
+    </div>
   );
 }
 

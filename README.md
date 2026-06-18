@@ -4,7 +4,7 @@
 
 ## 前端视觉说明
 
-V4 前端视觉参考了 Notion AI 公开页面的设计风格：黑色背景、高对比白字、深灰编辑器窗口、紫色强调、AI Assist 输入框和深色功能卡片。
+V4 前端视觉参考了 Notion AI 公开页面的设计风格：黑色背景、高对比白字、深灰编辑器窗口、紫色强调、AI Assist 输入框和深色功能卡片。V5 在此基础上收敛首页信息架构，统一全站导航和返回路径，并把首页能力说明改为可读的五步辩论流程。
 
 本项目仅参考其视觉语言，没有复用 Notion 官方代码或插画资源。`ui material` 文件夹中的图片是本地视觉参考材料；如果准备公开上传 GitHub，建议确认这些图片是否需要保留在仓库中。
 
@@ -36,6 +36,8 @@ V4 前端视觉参考了 Notion AI 公开页面的设计风格：黑色背景、
 - Markdown 导出：支持复制和下载当前辩论报告。
 - 失败重跑：失败辩论可整场重新运行。
 - 文章库与历史辩论：支持搜索、筛选、排序和删除。
+- 继续追问：可从已完成的裁判结果创建独立子辩论，保留父子关系并复用原文章或话题。
+- 工作台与导航：主页展示进行中和最近完成记录，所有列表、创建和详情页都有明确的首页或上级入口。
 
 ## 目录结构
 
@@ -70,8 +72,11 @@ V4 前端视觉参考了 Notion AI 公开页面的设计风格：黑色背景、
 │   │   ├── debate-summary-panel.tsx  # 辩论详情顶部摘要面板
 │   │   ├── debate-stage-progress.tsx # 3/5/9 阶段进度展示
 │   │   ├── disagreement-map.tsx      # 争议点地图
+│   │   ├── follow-up-debate-form.tsx # 从裁判结果创建追问子辩论
 │   │   ├── judge-report.tsx          # 裁判报告展示
-│   │   └── report-actions.tsx        # Markdown 复制与导出按钮
+│   │   ├── page-back-link.tsx        # 页面层级返回入口
+│   │   ├── report-actions.tsx        # Markdown 复制与导出按钮
+│   │   └── site-header.tsx           # 响应式全站导航
 │   ├── lib/                 # API client、共享类型、Markdown 报告生成
 │   │   ├── api.ts           # 前端 fetch 封装
 │   │   ├── report.ts        # Markdown 报告生成逻辑
@@ -92,7 +97,9 @@ V4 前端视觉参考了 Notion AI 公开页面的设计风格：黑色背景、
 │   ├── v3-development-plan.md      # V3 开发计划
 │   ├── v3-development-handoff.md   # V3 交接手册
 │   ├── v4-development-plan.md      # V4 Notion AI 风格前端改造计划
-│   └── v4-development-handoff.md   # V4 交接手册与公开仓库注意事项
+│   ├── v4-development-handoff.md   # V4 交接手册与公开仓库注意事项
+│   ├── v5-development-plan.md      # V5 开发前确认计划
+│   └── v5-development-handoff.md   # V5 实际交付与验证记录
 ├── .env.example             # 环境变量示例，不包含真实密钥
 ├── .gitignore               # Git 忽略规则，排除 .env、数据库、缓存和本地参考图
 ├── pytest.ini               # pytest 配置
@@ -186,9 +193,10 @@ npm run lint
 npm run build
 ```
 
-V4 最近一次前端验证结果：
+V5 最近一次验证结果：
 
 ```text
+pytest          79 passed
 npm run lint   passed
 npm run build  passed
 ```

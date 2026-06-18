@@ -21,6 +21,21 @@ class DebateCreate(BaseModel):
     stage_mode: Optional[StageMode] = None
 
 
+class DebateFollowUpCreate(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    debate_depth: Optional[DebateDepth] = None
+    output_style: Optional[OutputStyle] = None
+    stage_mode: Optional[StageMode] = None
+
+    @field_validator("question")
+    @classmethod
+    def question_must_not_be_blank(cls, value: str) -> str:
+        question = value.strip()
+        if not question:
+            raise ValueError("Question must not be blank")
+        return question
+
+
 class TopicDebateCreate(BaseModel):
     topic: str = Field(min_length=1)
     background: Optional[str] = None
@@ -69,6 +84,8 @@ class AgentMessageRead(BaseModel):
 class DebateRead(BaseModel):
     id: int
     article_id: int
+    parent_debate_id: Optional[int] = None
+    follow_up_question: Optional[str] = None
     status: DebateStatus
     main_claim: Optional[str] = None
     debate_topic: Optional[str] = None
